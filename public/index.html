@@ -14,7 +14,7 @@
       display: block;
       margin-bottom: 5px;
     }
-    .scenario input, .scenario textarea {
+    .scenario input, .scenario select {
       width: 100%;
       margin-bottom: 10px;
     }
@@ -54,10 +54,22 @@
       scenarioDiv.innerHTML = `
         <h3>Scenario ${scenarioCount}</h3>
         <label for="url-${scenarioCount}">URL:</label>
-        <input type="text" id="url-${scenarioCount}" name="url-${scenarioCount}" placeholder="https://example.com" required>
+        <input type="text" id="url-${scenarioCount}" placeholder="https://example.com" required>
 
-        <label for="actions-${scenarioCount}">Actions (JSON):</label>
-        <textarea id="actions-${scenarioCount}" name="actions-${scenarioCount}" rows="5" placeholder='[{"selector": "#button1", "clicks": 10}]' required></textarea>
+        <label for="users-${scenarioCount}">Number of Users:</label>
+        <input type="number" id="users-${scenarioCount}" placeholder="1" required>
+
+        <label for="element-${scenarioCount}">CSS Selector (Element to Click):</label>
+        <input type="text" id="element-${scenarioCount}" placeholder="#button1" required>
+
+        <label for="clicks-${scenarioCount}">Number of Clicks:</label>
+        <input type="number" id="clicks-${scenarioCount}" placeholder="10" required>
+
+        <label for="input-${scenarioCount}">Input Text (Optional):</label>
+        <input type="text" id="input-${scenarioCount}" placeholder="Enter text here">
+
+        <label for="duration-${scenarioCount}">Duration (in seconds):</label>
+        <input type="number" id="duration-${scenarioCount}" placeholder="10" required>
 
         <button class="remove-btn" onclick="removeScenario(${scenarioCount})">Remove</button>
       `;
@@ -78,17 +90,20 @@
         const scenarioDiv = document.getElementById(`scenario-${i}`);
         if (scenarioDiv) {
           const url = document.getElementById(`url-${i}`).value;
-          const actions = document.getElementById(`actions-${i}`).value;
+          const users = parseInt(document.getElementById(`users-${i}`).value, 10);
+          const element = document.getElementById(`element-${i}`).value;
+          const clicks = parseInt(document.getElementById(`clicks-${i}`).value, 10);
+          const input = document.getElementById(`input-${i}`).value || null;
+          const duration = parseInt(document.getElementById(`duration-${i}`).value, 10);
 
-          try {
-            scenarios.push({
-              url,
-              actions: JSON.parse(actions),
-            });
-          } catch (error) {
-            document.getElementById('response').innerText = `Error in Scenario ${i}: Invalid JSON in actions`;
-            return;
-          }
+          scenarios.push({
+            url,
+            users,
+            element,
+            clicks,
+            input,
+            duration,
+          });
         }
       }
 
