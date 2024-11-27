@@ -57,66 +57,74 @@ app.post('/run-scenarios', async (req, res) => {
       };
 
       for (let repeatIndex = 0; repeatIndex < repeats; repeatIndex++) {
-        const userTasks = Array.from({ length: users }, async (_, userIndex) => {
-          try {
-            const page = await browser.newPage();
-            const startTime = Date.now();
+        try {
+          // Buat semua pengguna berjalan paralel
+          const userTasks = Array.from({ length: users }).map(async (_, userIndex) => {
+            try {
+              const page = await browser.newPage();
+              const startTime = Date.now();
 
-            await page.goto(url, { waitUntil: 'networkidle2' });
-            const loadTime = Date.now() - startTime;
+              await page.goto(url, { waitUntil: 'networkidle2' });
+              const loadTime = Date.now() - startTime;
 
-            scenarioResults.successCount++;
-            scenarioResults.totalLoadTime += loadTime;
+              scenarioResults.successCount++;
+              scenarioResults.totalLoadTime += loadTime;
 
-            addLogEntry(
-              `Scenario ${index + 1}, User ${userIndex + 1}, Repeat ${repeatIndex + 1}: Success (${loadTime}ms)`,
-              'success'
-            );
-
-            // Simulate input if selectors are provided
-            if (inputField && inputValue) {
-              await page.type(inputField, inputValue);
               addLogEntry(
-                `Scenario ${index + 1}: Typed '${inputValue}' into '${inputField}'`,
+                `Scenario ${index + 1}, User ${userIndex + 1}, Repeat ${repeatIndex + 1}: Success (${loadTime}ms)`,
                 'success'
               );
-            }
 
-            // Click button if provided
-            // Click button if provided
-            if (button) {
-              try {
-                await page.waitForSelector(button, { timeout: 5000 }); // Tunggu hingga tombol muncul (5 detik)
-                await page.click(button);
+              // Simulate input if selectors are provided
+              if (inputField && inputValue) {
+                await page.type(inputField, inputValue);
                 addLogEntry(
-                  `Scenario ${index + 1}: Clicked button '${button}'`,
+                  `Scenario ${index + 1}: Typed '${inputValue}' into '${inputField}'`,
                   'success'
                 );
-              } catch (error) {
-                scenarioResults.errorCount++;
-                addLogEntry(
-                  `Scenario ${index + 1}: Failed to click button '${button}' (${error.message})`,
-                  'error'
-                );
               }
+
+              // Click button if provided
+              if (button) {
+                try {
+                  await page.waitForSelector(button, { timeout: 5000 }); // Tunggu hingga tombol muncul (5 detik)
+                  await page.click(button);
+                  addLogEntry(
+                    `Scenario ${index + 1}: Clicked button '${button}'`,
+                    'success'
+                  );
+                } catch (error) {
+                  scenarioResults.errorCount++;
+                  addLogEntry(
+                    `Scenario ${index + 1}: Failed to click button '${button}' (${error.message})`,
+                    'error'
+                  );
+                }
+              }
+
+              await page.close();
+            } catch (error) {
+              scenarioResults.errorCount++;
+              addLogEntry(
+                `Scenario ${index + 1}, User ${userIndex + 1}, Repeat ${repeatIndex + 1}: Failed (${error.message})`,
+                'error'
+              );
             }
-            
-            await page.close();
-          } catch (error) {
-            scenarioResults.errorCount++;
-            addLogEntry(
-              `Scenario ${index + 1}, User ${userIndex + 1}, Repeat ${repeatIndex + 1}: Failed (${error.message})`,
-              'error'
-            );
+          });
+
+          // Jalankan semua tugas pengguna secara paralel
+          await Promise.all(userTasks);
+
+          // Tunggu durasi jika diberikan
+          if (duration) {
+            await new Promise((resolve) => setTimeout(resolve, duration));
           }
-        });
-
-        // Jalankan semua tugas pengguna secara bersamaan
-        await Promise.all(userTasks);
-
-        // Tunggu durasi jika diberikan
-        if (duration) {
-          await new Promise((resolve) => setTimeout(resolve, duration));
+        } catch (error) {
+          scenarioResults.errorCount++;
+          addLogEntry(
+            `Scenario ${index + 1}, Repeat ${repeatIndex + 1}: Failed (${error.message})`,
+            'error'
+          );
         }
       }
 
