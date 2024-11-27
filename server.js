@@ -4,6 +4,8 @@ const puppeteer = require('puppeteer');
 
 const app = express();
 app.use(bodyParser.json());
+app.use(express.static('public')); 
+
 
 let logs = [];
 
