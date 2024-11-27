@@ -102,6 +102,7 @@ app.post('/run-scenarios', async (req, res, next) => {
     }
 
     // Kirimkan hasil sebagai JSON
+    console.log('Response to client:', { success: true, results });
     res.json({ success: true, results });
   } catch (error) {
     console.error('Server error:', error.message);
@@ -114,7 +115,7 @@ app.post('/run-scenarios', async (req, res, next) => {
 
 // Middleware global untuk error handling
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error(`Error: ${err.message}`);
   res.status(500).json({ success: false, error: err.message });
 });
 

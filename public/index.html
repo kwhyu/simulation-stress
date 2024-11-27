@@ -1,233 +1,244 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Puppeteer Stress Test Tool</title>
-  <style>
-    /* Tetap sama seperti sebelumnya */
-    body {
-      font-family: 'Arial', sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f9f9f9;
-      color: #333;
-      line-height: 1.6;
-      display: flex;
-      flex-direction: column;
-    }
-
-    header {
-      background: #1d72b8;
-      color: #fff;
-      padding: 20px;
-      text-align: center;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 24px;
-    }
-
-    main {
-      display: flex;
-      flex-wrap: wrap;
-      margin: 20px auto;
-      max-width: 1200px;
-      gap: 20px;
-    }
-
-    .content {
-      flex: 3;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      padding: 20px;
-      min-width: 700px;
-    }
-
-    .log-box {
-      flex: 1;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      padding: 20px;
-      overflow-y: auto;
-      height: 500px;
-    }
-
-    .log-box h3 {
-      margin-top: 0;
-    }
-
-    .scenario {
-      border: 1px solid #ddd;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 5px;
-      background: #f7f7f7;
-      position: relative;
-    }
-
-    .scenario label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-
-    .scenario input {
-      width: calc(100% - 10px);
-      padding: 8px;
-      margin-bottom: 15px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-
-    .scenario .remove-button {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #dc3545;
-      color: #fff;
-      border: none;
-      padding: 5px 10px;
-      font-size: 12px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .scenario .remove-button:hover {
-      opacity: 0.9;
-    }
-
-    .btn-group {
-      margin-top: 15px;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    button.add-scenario {
-      background: #1d72b8;
-      color: #fff;
-    }
-
-    button.start-scenarios {
-      background: #28a745;
-      color: #fff;
-    }
-
-    button:hover {
-      opacity: 0.9;
-    }
-
-    #loading {
-      font-family: Arial, sans-serif;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(255, 255, 255, 0.9);
-      padding: 30px;
-      border-radius: 5px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-      display: none;
-      text-align: center;
-      z-index: 1000;
-    }
-
-    #loading h3 {
-      font-size: 20px;
-      margin-bottom: 10px;
-    }
-
-    .spinner {
-      margin: 10px auto;
-      border: 5px solid #ccc;
-      border-top: 5px solid #1d72b8;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      from {
-        transform: rotate(0deg);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Puppeteer Stress Test Tool</title>
+    <style>
+      /* Tetap sama seperti sebelumnya */
+      body {
+        font-family: "Arial", sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #f9f9f9;
+        color: #333;
+        line-height: 1.6;
+        display: flex;
+        flex-direction: column;
       }
-      to {
-        transform: rotate(360deg);
+
+      header {
+        background: #1d72b8;
+        color: #fff;
+        padding: 20px;
+        text-align: center;
       }
-    }
 
-    pre {
-      background: #f4f4f4;
-      padding: 10px;
-      border-radius: 5px;
-      border: 1px solid #ddd;
-      margin-top: 20px;
-      overflow-x: auto;
-      max-height: 300px;
-    }
+      header h1 {
+        margin: 0;
+        font-size: 24px;
+      }
 
-    .log-entry {
-      margin-bottom: 10px;
-      font-size: 14px;
-    }
+      main {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 20px auto;
+        max-width: 1200px;
+        gap: 20px;
+      }
 
-    .log-entry.error {
-      color: red;
-    }
+      .content {
+        flex: 3;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        min-width: 700px;
+      }
 
-    .log-entry.success {
-      color: green;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>Puppeteer Stress Test Tool</h1>
-  </header>
-  <main>
-    <div class="content">
-      <h2>Create Scenarios</h2>
-      <div id="scenarios">
+      .log-box {
+        flex: 1;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        overflow-y: auto;
+        height: 500px;
+      }
+
+      .log-box h3 {
+        margin-top: 0;
+      }
+
+      .scenario {
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        background: #f7f7f7;
+        position: relative;
+      }
+
+      .scenario label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .scenario input {
+        width: calc(100% - 10px);
+        padding: 8px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .scenario .remove-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #dc3545;
+        color: #fff;
+        border: none;
+        padding: 5px 10px;
+        font-size: 12px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      .scenario .remove-button:hover {
+        opacity: 0.9;
+      }
+
+      .btn-group {
+        margin-top: 15px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      button.add-scenario {
+        background: #1d72b8;
+        color: #fff;
+      }
+
+      button.start-scenarios {
+        background: #28a745;
+        color: #fff;
+      }
+
+      button:hover {
+        opacity: 0.9;
+      }
+
+      #loading {
+        font-family: Arial, sans-serif;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 30px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        display: none;
+        text-align: center;
+        z-index: 1000;
+      }
+
+      #loading h3 {
+        font-size: 20px;
+        margin-bottom: 10px;
+      }
+
+      .spinner {
+        margin: 10px auto;
+        border: 5px solid #ccc;
+        border-top: 5px solid #1d72b8;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      pre {
+        background: #f4f4f4;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        margin-top: 20px;
+        overflow-x: auto;
+        max-height: 300px;
+      }
+
+      .log-entry {
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+
+      .log-entry.error {
+        color: red;
+      }
+
+      .log-entry.success {
+        color: green;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Puppeteer Stress Test Tool</h1>
+    </header>
+    <main>
+      <div class="content">
+        <h2>Create Scenarios</h2>
+        <div id="scenarios"></div>
+        <div class="btn-group">
+          <button
+            class="add-scenario"
+            id="add-scenario-btn"
+            onclick="addScenario()"
+          >
+            Add Scenario
+          </button>
+          <button
+            class="start-scenarios"
+            id="start-scenarios-btn"
+            onclick="startScenarios()"
+          >
+            Start Scenarios
+          </button>
+        </div>
+        <div id="loading">
+          <h3>Processing Scenarios...</h3>
+          <div class="spinner"></div>
+          <p>We are running your test scenarios. Please wait...</p>
+        </div>
+        <h3>Response</h3>
+        <pre id="response"></pre>
       </div>
-      <div class="btn-group">
-        <button class="add-scenario" id="add-scenario-btn" onclick="addScenario()">Add Scenario</button>
-        <button class="start-scenarios" id="start-scenarios-btn" onclick="startScenarios()">Start Scenarios</button>
+      <div class="log-box">
+        <h3>Log</h3>
+        <div id="log"></div>
       </div>
-      <div id="loading">
-        <h3>Processing Scenarios...</h3>
-        <div class="spinner"></div>
-        <p>We are running your test scenarios. Please wait...</p>
-      </div>
-      <h3>Response</h3>
-      <pre id="response"></pre>
-    </div>
-    <div class="log-box">
-      <h3>Log</h3>
-      <div id="log"></div>
-    </div>
-  </main>
-  <script>
-    let scenarioCount = 0;
+    </main>
+    <script>
+      let scenarioCount = 0;
 
-    function addScenario() {
-      scenarioCount++;
-      const scenariosDiv = document.getElementById('scenarios');
-      const newScenario = document.createElement('div');
-      newScenario.className = 'scenario';
-      newScenario.id = `scenario-${scenarioCount}`;
-      newScenario.innerHTML = `
+      function addScenario() {
+        scenarioCount++;
+        const scenariosDiv = document.getElementById("scenarios");
+        const newScenario = document.createElement("div");
+        newScenario.className = "scenario";
+        newScenario.id = `scenario-${scenarioCount}`;
+        newScenario.innerHTML = `
         <button class="remove-button" onclick="removeScenario(${scenarioCount})">Remove</button>
         <label>URL (Mandatory):</label>
         <input type="text" id="url-${scenarioCount}" placeholder="Enter URL" required>
@@ -244,70 +255,97 @@
         <label>Button Selector (Optional):</label>
         <input type="text" id="button-${scenarioCount}" placeholder="e.g., #submit">
       `;
-      scenariosDiv.appendChild(newScenario);
-    }
+        scenariosDiv.appendChild(newScenario);
+      }
 
-    function removeScenario(id) {
-      const scenario = document.getElementById(`scenario-${id}`);
-      if (scenario) scenario.remove();
-    }
+      function removeScenario(id) {
+        const scenario = document.getElementById(`scenario-${id}`);
+        if (scenario) scenario.remove();
+      }
 
-    function toggleLoading(state) {
-      const loading = document.getElementById('loading');
-      const buttons = document.querySelectorAll('button');
-      loading.style.display = state ? 'block' : 'none';
-      buttons.forEach(btn => (btn.disabled = state));
-    }
+      function toggleLoading(state) {
+        const loading = document.getElementById("loading");
+        const buttons = document.querySelectorAll("button");
+        loading.style.display = state ? "block" : "none";
+        buttons.forEach((btn) => (btn.disabled = state));
+      }
 
-    async function startScenarios() {
-      const responseDiv = document.getElementById('response');
-      responseDiv.textContent = '';
-      toggleLoading(true);
+      async function startScenarios() {
+        const loading = document.getElementById("loading");
+        const responseDiv = document.getElementById("response");
+        responseDiv.innerHTML = "";
+        loading.style.display = "block";
+        toggleButtons(false);
 
-      const scenarios = [];
-      for (let i = 1; i <= scenarioCount; i++) {
-        const url = document.getElementById(`url-${i}`)?.value;
-        const repeats = parseInt(document.getElementById(`repeats-${i}`)?.value, 10);
-        const duration = parseInt(document.getElementById(`duration-${i}`)?.value, 10);
-        const users = parseInt(document.getElementById(`users-${i}`)?.value, 10);
-        const inputField = document.getElementById(`inputField-${i}`)?.value;
-        const inputValue = document.getElementById(`inputValue-${i}`)?.value;
-        const button = document.getElementById(`button-${i}`)?.value;
+        const scenarios = [];
+        for (let i = 0; i <= scenarioCount; i++) {
+          const url = document.getElementById(`url-${i}`)?.value;
+          const repeats = parseInt(
+            document.getElementById(`repeats-${i}`)?.value,
+            10
+          );
+          const duration = parseInt(
+            document.getElementById(`duration-${i}`)?.value,
+            10
+          );
+          const users = parseInt(
+            document.getElementById(`users-${i}`)?.value,
+            10
+          );
+          const inputField = document.getElementById(`inputField-${i}`)?.value;
+          const inputValue = document.getElementById(`inputValue-${i}`)?.value;
+          const button = document.getElementById(`button-${i}`)?.value;
 
-        if (!url || !repeats || !duration || !users) {
-          alert(`Scenario ${i}: Please fill all mandatory fields.`);
-          toggleLoading(false);
-          return;
+          if (!url || !repeats || !duration || !users) {
+            alert(`Scenario ${i}: Please fill all mandatory fields.`);
+            toggleButtons(true);
+            loading.style.display = "none";
+            return;
+          }
+
+          scenarios.push({
+            url,
+            repeats,
+            duration,
+            users,
+            inputField,
+            inputValue,
+            button,
+          });
         }
 
-        scenarios.push({ url, repeats, duration, users, inputField, inputValue, button });
+        try {
+          const res = await fetch("/run-scenarios", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ scenarios }),
+          });
+
+          // Validasi apakah respons berupa JSON
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+
+          const data = await res.json();
+          responseDiv.textContent = JSON.stringify(data, null, 2);
+          addLogEntry("Scenarios executed successfully.", "success");
+        } catch (error) {
+          responseDiv.textContent = `Error: ${error.message}`;
+          addLogEntry(`Error: ${error.message}`, "error");
+        } finally {
+          loading.style.display = "none";
+          toggleButtons(true);
+        }
       }
 
-      try {
-        const res = await fetch('/start-scenarios', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scenarios }),
-        });
-        const data = await res.json();
-        responseDiv.textContent = JSON.stringify(data, null, 2);
-        addLogEntry('Scenarios executed successfully.', 'success');
-      } catch (error) {
-        responseDiv.textContent = error.message;
-        addLogEntry(`Error: ${error.message}`, 'error');
-      } finally {
-        toggleLoading(false);
+      function addLogEntry(message, type) {
+        const log = document.getElementById("log");
+        const entry = document.createElement("div");
+        entry.className = `log-entry ${type}`;
+        entry.textContent = `${new Date().toLocaleString()}: ${message}`;
+        log.appendChild(entry);
+        log.scrollTop = log.scrollHeight;
       }
-    }
-
-    function addLogEntry(message, type) {
-      const log = document.getElementById('log');
-      const entry = document.createElement('div');
-      entry.className = `log-entry ${type}`;
-      entry.textContent = `${new Date().toLocaleString()}: ${message}`;
-      log.appendChild(entry);
-      log.scrollTop = log.scrollHeight;
-    }
-  </script>
-</body>
+    </script>
+  </body>
 </html>
