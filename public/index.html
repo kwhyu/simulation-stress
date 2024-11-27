@@ -269,7 +269,7 @@
       toggleButtons(false);
 
       const scenarios = [];
-      for (let i = 1; i <= scenarioCount; i++) {
+      for (let i = 0; i <= scenarioCount; i++) {
         const url = document.getElementById(`url-${i}`)?.value;
         const repeats = parseInt(document.getElementById(`repeats-${i}`)?.value, 10);
         const duration = parseInt(document.getElementById(`duration-${i}`)?.value, 10);
