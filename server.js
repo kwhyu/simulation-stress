@@ -1,152 +1,78 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
 const bodyParser = require('body-parser');
+const puppeteer = require('puppeteer');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+app.use(bodyParser.json());
 
-// Variabel global untuk menyimpan log
-const logEntries = [];
+let logs = [];
 
 // Fungsi untuk menambahkan log
 function addLogEntry(message, type = 'info') {
-  const log = {
-    timestamp: new Date().toISOString(),
+  logs.push({
+    timestamp: new Date(),
     message,
     type,
-  };
-  logEntries.push(log);
-  console.log(`${log.timestamp} - ${type.toUpperCase()}: ${message}`);
+  });
 }
 
-// Middleware untuk parsing JSON
-app.use(bodyParser.json());
-app.use(express.static('public'));
-
-// Middleware untuk logging permintaan
-app.use((req, res, next) => {
-  addLogEntry(`${req.method} ${req.path}`, 'request');
-  next();
-});
-
-// Endpoint untuk mendapatkan log
+// API untuk mengambil log
 app.get('/get-logs', (req, res) => {
-  res.json(logEntries);
+  res.json(logs);
 });
 
-// Endpoint utama
-app.post('/run-scenarios', async (req, res, next) => {
-  const { scenarios } = req.body;
+// API untuk menjalankan skenario
+app.post('/run-scenarios', async (req, res) => {
+  const scenarios = req.body.scenarios;
 
-  // Validasi input
-  if (!scenarios || !Array.isArray(scenarios) || scenarios.length === 0) {
-    return res.status(400).json({ error: 'Invalid or empty scenarios.' });
+  if (!scenarios || scenarios.length === 0) {
+    res.status(400).json({ error: 'No scenarios provided.' });
+    return;
   }
 
-  let browser;
-  try {
-    // Meluncurkan Puppeteer
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
+  const results = [];
 
-    const results = [];
-    for (const scenario of scenarios) {
-      const { url, repeats, duration, users, inputField, inputValue, button } = scenario;
+  for (const [index, scenario] of scenarios.entries()) {
+    try {
+      addLogEntry(`Running scenario ${index + 1}...`);
 
-      // Validasi setiap skenario
-      if (!url || !repeats || !duration || !users) {
-        addLogEntry('Missing mandatory fields in scenario.', 'error');
-        throw new Error('Missing mandatory fields in scenario.');
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+      await page.goto(scenario.url);
+
+      addLogEntry(`Scenario ${index + 1}: Opened URL ${scenario.url}`, 'success');
+
+      // Simulate input if selectors are provided
+      if (scenario.inputField && scenario.inputValue) {
+        await page.type(scenario.inputField, scenario.inputValue);
+        addLogEntry(`Scenario ${index + 1}: Typed '${scenario.inputValue}' into '${scenario.inputField}'`, 'success');
       }
 
-      addLogEntry(`Starting scenario for URL: ${url}`, 'info');
-
-      const scenarioResults = {
-        url,
-        totalTests: users * repeats,
-        successCount: 0,
-        errorCount: 0,
-        totalLoadTime: 0,
-        avgLoadTime: 0,
-        successRate: 0,
-        errorRate: 0,
-      };
-
-      for (let i = 0; i < users; i++) {
-        for (let j = 0; j < repeats; j++) {
-          const page = await browser.newPage();
-          try {
-            const startTime = performance.now();
-            await page.goto(url, { waitUntil: 'load', timeout: duration });
-            const endTime = performance.now();
-
-            scenarioResults.totalLoadTime += endTime - startTime;
-
-            // Jika ada input field dan nilai
-            if (inputField && inputValue) {
-              await page.type(inputField, inputValue);
-            }
-
-            // Jika ada tombol untuk diklik
-            if (button) {
-              await page.click(button);
-            }
-
-            scenarioResults.successCount++;
-            addLogEntry(`Test successful for URL: ${url}`, 'success');
-          } catch (error) {
-            scenarioResults.errorCount++;
-            addLogEntry(
-              `Error during test for URL: ${url} - ${error.message}`,
-              'error'
-            );
-          } finally {
-            await page.close();
-          }
-        }
+      // Click button if provided
+      if (scenario.button) {
+        await page.click(scenario.button);
+        addLogEntry(`Scenario ${index + 1}: Clicked button '${scenario.button}'`, 'success');
       }
 
-      // Hitung statistik
-      scenarioResults.avgLoadTime =
-        scenarioResults.successCount > 0
-          ? (scenarioResults.totalLoadTime / scenarioResults.successCount).toFixed(2)
-          : 0;
+      // Simulate users and repeats
+      for (let i = 0; i < scenario.repeats; i++) {
+        addLogEntry(`Scenario ${index + 1}: Repeat ${i + 1}/${scenario.repeats}`);
+        await page.waitForTimeout(scenario.duration);
+      }
 
-      scenarioResults.successRate = (
-        (scenarioResults.successCount / scenarioResults.totalTests) *
-        100
-      ).toFixed(2);
-
-      scenarioResults.errorRate = (
-        (scenarioResults.errorCount / scenarioResults.totalTests) *
-        100
-      ).toFixed(2);
-
-      results.push(scenarioResults);
-      addLogEntry(`Scenario completed for URL: ${url}`, 'info');
+      await browser.close();
+      results.push({ scenario: index + 1, status: 'Success' });
+      addLogEntry(`Scenario ${index + 1} completed successfully.`, 'success');
+    } catch (error) {
+      results.push({ scenario: index + 1, status: 'Failed', error: error.message });
+      addLogEntry(`Scenario ${index + 1} failed: ${error.message}`, 'error');
     }
-
-    // Kirimkan hasil sebagai JSON
-    addLogEntry('All scenarios completed successfully.', 'success');
-    res.json({ success: true, results });
-  } catch (error) {
-    addLogEntry(`Server error: ${error.message}`, 'error');
-    next(error);
-  } finally {
-    // Tutup browser jika sudah selesai
-    if (browser) await browser.close();
   }
+
+  res.json({ results });
 });
 
-// Middleware global untuk error handling
-app.use((err, req, res, next) => {
-  addLogEntry(`Error: ${err.message}`, 'error');
-  res.status(500).json({ success: false, error: err.message });
-});
-
-// Jalankan server
+const PORT = 3000;
 app.listen(PORT, () => {
-  addLogEntry(`Server running on port ${PORT}`, 'info');
+  console.log(`Server running on http://localhost:${PORT}`);
 });

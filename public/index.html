@@ -125,6 +125,11 @@
         color: #fff;
       }
 
+      button:disabled {
+        background: #bbb;
+        cursor: not-allowed;
+      }
+
       button:hover {
         opacity: 0.9;
       }
@@ -190,6 +195,12 @@
       .log-entry.success {
         color: green;
       }
+
+      #timer {
+        font-size: 14px;
+        color: #555;
+        margin-top: 10px;
+      }
     </style>
   </head>
   <body>
@@ -221,6 +232,7 @@
           <div class="spinner"></div>
           <p>We are running your test scenarios. Please wait...</p>
         </div>
+        <div id="timer"></div>
         <h3>Response</h3>
         <pre id="response"></pre>
       </div>
@@ -232,7 +244,8 @@
     <script>
       let scenarioCount = 1;
       let logInterval = null;
-    
+      let timerInterval = null;
+
       function addScenario() {
         const scenariosDiv = document.getElementById('scenarios');
         const newScenario = document.createElement('div');
@@ -258,7 +271,16 @@
         scenariosDiv.appendChild(newScenario);
         scenarioCount++;
       }
-    
+
+      function removeScenario(index) {
+        document.getElementById(`scenario-${index}`).remove();
+      }
+
+      function toggleButtons(enable) {
+        document.getElementById('add-scenario-btn').disabled = !enable;
+        document.getElementById('start-scenarios-btn').disabled = !enable;
+      }
+
       function fetchLogs() {
         fetch('/get-logs')
           .then(response => response.json())
@@ -275,16 +297,30 @@
           })
           .catch(error => console.error('Error fetching logs:', error));
       }
-    
+
+      function startTimer() {
+        const timerElement = document.getElementById('timer');
+        let timer = 0;
+        timerInterval = setInterval(() => {
+          timer++;
+          timerElement.textContent = `Duration: ${timer}s`;
+        }, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+      }
+
       async function startScenarios() {
         const loading = document.getElementById('loading');
         const responseDiv = document.getElementById('response');
         responseDiv.innerHTML = '';
         loading.style.display = 'block';
         toggleButtons(false);
-    
+        startTimer();
+
         const scenarios = [];
-        for (let i = 0; i <= scenarioCount; i++) {
+        for (let i = 0; i < scenarioCount; i++) {
           const url = document.getElementById(`url-${i}`)?.value;
           const repeats = parseInt(document.getElementById(`repeats-${i}`)?.value, 10);
           const duration = parseInt(document.getElementById(`duration-${i}`)?.value, 10);
@@ -292,36 +328,37 @@
           const inputField = document.getElementById(`inputField-${i}`)?.value;
           const inputValue = document.getElementById(`inputValue-${i}`)?.value;
           const button = document.getElementById(`button-${i}`)?.value;
-    
+
           if (!url || !repeats || !duration || !users) {
             alert(`Scenario ${i}: Please fill all mandatory fields.`);
             toggleButtons(true);
             loading.style.display = 'none';
+            stopTimer();
             return;
           }
-    
+
           scenarios.push({ url, repeats, duration, users, inputField, inputValue, button });
         }
-    
+
         try {
-          logInterval = setInterval(fetchLogs, 1000); // Mulai polling log
+          logInterval = setInterval(fetchLogs, 1000);
           const res = await fetch('/run-scenarios', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ scenarios }),
           });
-    
+
           const data = await res.json();
           responseDiv.textContent = JSON.stringify(data, null, 2);
-          addLogEntry('Scenarios executed successfully.', 'success');
         } catch (error) {
           responseDiv.textContent = `Error: ${error.message}`;
-          addLogEntry(`Error: ${error.message}`, 'error');
         } finally {
-          clearInterval(logInterval); // Hentikan polling log
+          clearInterval(logInterval);
           loading.style.display = 'none';
           toggleButtons(true);
+          stopTimer();
         }
       }
     </script>
-    
+  </body>
+</html>
