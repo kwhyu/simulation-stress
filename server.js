@@ -4,8 +4,7 @@ const puppeteer = require('puppeteer');
 
 const app = express();
 app.use(bodyParser.json());
-app.use(express.static('public')); 
-
+app.use(express.static('public'));
 
 let logs = [];
 
@@ -41,7 +40,6 @@ app.post('/run-scenarios', async (req, res) => {
       const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
       });
-      const page = await browser.newPage();
 
       const { url, users, repeats, duration, inputField, inputValue, button } =
         scenario;
@@ -58,10 +56,12 @@ app.post('/run-scenarios', async (req, res) => {
         errorRate: 0,
       };
 
-      for (let userIndex = 0; userIndex < users; userIndex++) {
-        for (let repeatIndex = 0; repeatIndex < repeats; repeatIndex++) {
+      for (let repeatIndex = 0; repeatIndex < repeats; repeatIndex++) {
+        const userTasks = Array.from({ length: users }, async (_, userIndex) => {
           try {
+            const page = await browser.newPage();
             const startTime = Date.now();
+
             await page.goto(url, { waitUntil: 'networkidle2' });
             const loadTime = Date.now() - startTime;
 
@@ -90,6 +90,8 @@ app.post('/run-scenarios', async (req, res) => {
                 'success'
               );
             }
+
+            await page.close();
           } catch (error) {
             scenarioResults.errorCount++;
             addLogEntry(
@@ -97,11 +99,14 @@ app.post('/run-scenarios', async (req, res) => {
               'error'
             );
           }
+        });
 
-          // Tunggu durasi jika diberikan
-          if (duration) {
-            await new Promise((resolve) => setTimeout(resolve, duration));
-          }
+        // Jalankan semua tugas pengguna secara bersamaan
+        await Promise.all(userTasks);
+
+        // Tunggu durasi jika diberikan
+        if (duration) {
+          await new Promise((resolve) => setTimeout(resolve, duration));
         }
       }
 
@@ -135,7 +140,6 @@ app.post('/run-scenarios', async (req, res) => {
 
   res.json({ results });
 });
-
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
