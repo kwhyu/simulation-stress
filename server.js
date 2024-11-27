@@ -37,7 +37,7 @@ app.post('/run-scenarios', async (req, res) => {
     maxConcurrency: 100,
     puppeteerOptions: {
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     },
   });
 
