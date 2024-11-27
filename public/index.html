@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Puppeteer Stress Test Tool</title>
     <style>
-      /* Tetap sama seperti sebelumnya */
+      /* Tetap sama seperti sebelumnya dengan penambahan media query */
       body {
         font-family: "Arial", sans-serif;
         margin: 0;
@@ -43,7 +43,7 @@
         border-radius: 8px;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         padding: 20px;
-        min-width: 700px;
+        min-width: 300px;
       }
 
       .log-box {
@@ -201,6 +201,14 @@
         color: #555;
         margin-top: 10px;
       }
+
+      @media (max-width: 768px) {
+        .content,
+        .log-box {
+          min-width: 100%;
+          flex: none;
+        }
+      }
     </style>
   </head>
   <body>
@@ -227,7 +235,7 @@
             Start Scenarios
           </button>
         </div>
-        <div id="loading">
+        <div id="loading" aria-live="polite" role="alert">
           <h3>Processing Scenarios...</h3>
           <div class="spinner"></div>
           <p>We are running your test scenarios. Please wait...</p>
@@ -329,13 +337,6 @@
           const inputValue = document.getElementById(`inputValue-${i}`)?.value;
           const button = document.getElementById(`button-${i}`)?.value;
 
-          // if (!url || !repeats || !duration || !users) {
-          //   alert(`Scenario ${i}: Please fill all mandatory fields.`);
-          //   toggleButtons(true);
-          //   loading.style.display = 'none';
-          //   stopTimer();
-          //   return;
-          // }
 
           scenarios.push({ url, repeats, duration, users, inputField, inputValue, button });
         }
@@ -362,3 +363,7 @@
     </script>
   </body>
 </html>
+
+
+
+

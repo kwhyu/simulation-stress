@@ -43,37 +43,92 @@ app.post('/run-scenarios', async (req, res) => {
       });
       const page = await browser.newPage();
 
-      // Validasi URL
-      // if (!scenario.url || !/^https?:\/\//.test(scenario.url)) {
-      //   throw new Error(`Invalid URL: ${scenario.url}`);
-      // }
-      await page.goto(scenario.url);
-      addLogEntry(`Scenario ${index + 1}: Opened URL ${scenario.url}`, 'success');
+      const { url, users, repeats, duration, inputField, inputValue, button } =
+        scenario;
 
-      // Simulate input if selectors are provided
-      if (scenario.inputField && scenario.inputValue) {
-        await page.type(scenario.inputField, scenario.inputValue);
-        addLogEntry(`Scenario ${index + 1}: Typed '${scenario.inputValue}' into '${scenario.inputField}'`, 'success');
+      // Inisialisasi hasil skenario
+      const scenarioResults = {
+        url,
+        totalTests: users * repeats,
+        successCount: 0,
+        errorCount: 0,
+        totalLoadTime: 0,
+        avgLoadTime: 0,
+        successRate: 0,
+        errorRate: 0,
+      };
+
+      for (let userIndex = 0; userIndex < users; userIndex++) {
+        for (let repeatIndex = 0; repeatIndex < repeats; repeatIndex++) {
+          try {
+            const startTime = Date.now();
+            await page.goto(url, { waitUntil: 'networkidle2' });
+            const loadTime = Date.now() - startTime;
+
+            scenarioResults.successCount++;
+            scenarioResults.totalLoadTime += loadTime;
+
+            addLogEntry(
+              `Scenario ${index + 1}, User ${userIndex + 1}, Repeat ${repeatIndex + 1}: Success (${loadTime}ms)`,
+              'success'
+            );
+
+            // Simulate input if selectors are provided
+            if (inputField && inputValue) {
+              await page.type(inputField, inputValue);
+              addLogEntry(
+                `Scenario ${index + 1}: Typed '${inputValue}' into '${inputField}'`,
+                'success'
+              );
+            }
+
+            // Click button if provided
+            if (button) {
+              await page.click(button);
+              addLogEntry(
+                `Scenario ${index + 1}: Clicked button '${button}'`,
+                'success'
+              );
+            }
+          } catch (error) {
+            scenarioResults.errorCount++;
+            addLogEntry(
+              `Scenario ${index + 1}, User ${userIndex + 1}, Repeat ${repeatIndex + 1}: Failed (${error.message})`,
+              'error'
+            );
+          }
+
+          // Tunggu durasi jika diberikan
+          if (duration) {
+            await new Promise((resolve) => setTimeout(resolve, duration));
+          }
+        }
       }
 
-      // Click button if provided
-      if (scenario.button) {
-        await page.click(scenario.button);
-        addLogEntry(`Scenario ${index + 1}: Clicked button '${scenario.button}'`, 'success');
+      // Hitung rata-rata waktu muat, tingkat keberhasilan, dan tingkat kesalahan
+      if (scenarioResults.successCount > 0) {
+        scenarioResults.avgLoadTime =
+          scenarioResults.totalLoadTime / scenarioResults.successCount;
       }
+      scenarioResults.successRate =
+        (scenarioResults.successCount / scenarioResults.totalTests) * 100;
+      scenarioResults.errorRate =
+        (scenarioResults.errorCount / scenarioResults.totalTests) * 100;
 
-      // Simulate users and repeats
-      for (let i = 0; i < scenario.repeats; i++) {
-        addLogEntry(`Scenario ${index + 1}: Repeat ${i + 1}/${scenario.repeats}`);
-        // Gunakan alternatif `waitForTimeout` jika versi Puppeteer tidak mendukung
-        await new Promise(resolve => setTimeout(resolve, scenario.duration));
-      }
+      results.push({
+        scenario: index + 1,
+        status: 'Success',
+        details: scenarioResults,
+      });
 
       await browser.close();
-      results.push({ scenario: index + 1, status: 'Success' });
       addLogEntry(`Scenario ${index + 1} completed successfully.`, 'success');
     } catch (error) {
-      results.push({ scenario: index + 1, status: 'Failed', error: error.message });
+      results.push({
+        scenario: index + 1,
+        status: 'Failed',
+        error: error.message,
+      });
       addLogEntry(`Scenario ${index + 1} failed: ${error.message}`, 'error');
     }
   }
