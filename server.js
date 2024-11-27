@@ -5,18 +5,29 @@ const bodyParser = require('body-parser');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Middleware untuk parsing JSON
 app.use(bodyParser.json());
-app.use(express.static('public')); // Serve the HTML file in the "public" directory
+app.use(express.static('public'));
 
-app.post('/run-scenarios', async (req, res) => {
+// Middleware untuk logging permintaan
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
+// Endpoint utama
+app.post('/run-scenarios', async (req, res, next) => {
   const { scenarios } = req.body;
 
+  // Validasi input
   if (!scenarios || !Array.isArray(scenarios) || scenarios.length === 0) {
     return res.status(400).json({ error: 'Invalid or empty scenarios.' });
   }
 
+  let browser;
   try {
-    const browser = await puppeteer.launch({
+    // Meluncurkan Puppeteer
+    browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
@@ -24,6 +35,11 @@ app.post('/run-scenarios', async (req, res) => {
     const results = [];
     for (const scenario of scenarios) {
       const { url, repeats, duration, users, inputField, inputValue, button } = scenario;
+
+      // Validasi setiap skenario
+      if (!url || !repeats || !duration || !users) {
+        throw new Error('Missing mandatory fields in scenario.');
+      }
 
       const scenarioResults = {
         url,
@@ -46,17 +62,19 @@ app.post('/run-scenarios', async (req, res) => {
 
             scenarioResults.totalLoadTime += endTime - startTime;
 
+            // Jika ada input field dan nilai
             if (inputField && inputValue) {
               await page.type(inputField, inputValue);
             }
 
+            // Jika ada tombol untuk diklik
             if (button) {
               await page.click(button);
             }
 
             scenarioResults.successCount++;
           } catch (error) {
-            console.error('Error during test:', error.message);
+            console.error(`Error during test on ${url}:`, error.message);
             scenarioResults.errorCount++;
           } finally {
             await page.close();
@@ -64,6 +82,7 @@ app.post('/run-scenarios', async (req, res) => {
         }
       }
 
+      // Hitung statistik
       scenarioResults.avgLoadTime =
         scenarioResults.successCount > 0
           ? (scenarioResults.totalLoadTime / scenarioResults.successCount).toFixed(2)
@@ -82,13 +101,24 @@ app.post('/run-scenarios', async (req, res) => {
       results.push(scenarioResults);
     }
 
-    await browser.close();
+    // Kirimkan hasil sebagai JSON
     res.json({ success: true, results });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Server error:', error.message);
+    next(error);
+  } finally {
+    // Tutup browser jika sudah selesai
+    if (browser) await browser.close();
   }
 });
 
+// Middleware global untuk error handling
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ success: false, error: err.message });
+});
+
+// Jalankan server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
