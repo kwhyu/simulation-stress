@@ -51,7 +51,8 @@ app.post('/run-scenarios', async (req, res) => {
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
       });
 
-      const { url, users, repeats, duration, inputField, inputValue, button } = scenario;
+      const { url, users, repeats, duration, inputField, inputValue, button } =
+        scenario;
 
       // Validasi properti skenario
       if (!url || !users || !repeats || !duration) {
