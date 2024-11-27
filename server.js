@@ -83,14 +83,24 @@ app.post('/run-scenarios', async (req, res) => {
             }
 
             // Click button if provided
+            // Click button if provided
             if (button) {
-              await page.click(button);
-              addLogEntry(
-                `Scenario ${index + 1}: Clicked button '${button}'`,
-                'success'
-              );
+              try {
+                await page.waitForSelector(button, { timeout: 5000 }); // Tunggu hingga tombol muncul (5 detik)
+                await page.click(button);
+                addLogEntry(
+                  `Scenario ${index + 1}: Clicked button '${button}'`,
+                  'success'
+                );
+              } catch (error) {
+                scenarioResults.errorCount++;
+                addLogEntry(
+                  `Scenario ${index + 1}: Failed to click button '${button}' (${error.message})`,
+                  'error'
+                );
+              }
             }
-
+            
             await page.close();
           } catch (error) {
             scenarioResults.errorCount++;
