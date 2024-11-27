@@ -38,13 +38,16 @@ app.post('/run-scenarios', async (req, res) => {
     try {
       addLogEntry(`Running scenario ${index + 1}...`);
 
-      // Modifikasi ini menambahkan opsi `--no-sandbox` dan `--disable-setuid-sandbox`
       const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
       });
       const page = await browser.newPage();
-      await page.goto(scenario.url);
 
+      // Validasi URL
+      if (!scenario.url || !/^https?:\/\//.test(scenario.url)) {
+        throw new Error(`Invalid URL: ${scenario.url}`);
+      }
+      await page.goto(scenario.url);
       addLogEntry(`Scenario ${index + 1}: Opened URL ${scenario.url}`, 'success');
 
       // Simulate input if selectors are provided
@@ -62,7 +65,8 @@ app.post('/run-scenarios', async (req, res) => {
       // Simulate users and repeats
       for (let i = 0; i < scenario.repeats; i++) {
         addLogEntry(`Scenario ${index + 1}: Repeat ${i + 1}/${scenario.repeats}`);
-        await page.waitForTimeout(scenario.duration);
+        // Gunakan alternatif `waitForTimeout` jika versi Puppeteer tidak mendukung
+        await new Promise(resolve => setTimeout(resolve, scenario.duration));
       }
 
       await browser.close();
