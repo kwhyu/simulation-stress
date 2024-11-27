@@ -12,6 +12,8 @@
       background: #f9f9f9;
       color: #333;
       line-height: 1.6;
+      display: flex;
+      flex-direction: column;
     }
 
     header {
@@ -27,12 +29,32 @@
     }
 
     main {
+      display: flex;
       margin: 20px auto;
-      max-width: 900px;
+      max-width: 1100px;
+    }
+
+    .content {
+      flex: 2;
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       padding: 20px;
+      margin-right: 20px;
+    }
+
+    .log-box {
+      flex: 1;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      overflow-y: auto;
+      height: 500px;
+    }
+
+    .log-box h3 {
+      margin-top: 0;
     }
 
     .scenario {
@@ -133,6 +155,19 @@
       overflow-x: auto;
       max-height: 300px;
     }
+
+    .log-entry {
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .log-entry.error {
+      color: red;
+    }
+
+    .log-entry.success {
+      color: green;
+    }
   </style>
 </head>
 <body>
@@ -140,21 +175,27 @@
     <h1>Puppeteer Stress Test Tool</h1>
   </header>
   <main>
-    <h2>Create Scenarios</h2>
-    <div id="scenarios">
-      <!-- Scenarios dynamically added here -->
+    <div class="content">
+      <h2>Create Scenarios</h2>
+      <div id="scenarios">
+        <!-- Scenarios dynamically added here -->
+      </div>
+      <div class="btn-group">
+        <button class="add-scenario" onclick="addScenario()">Add Scenario</button>
+        <button class="start-scenarios" onclick="startScenarios()">Start Scenarios</button>
+      </div>
+      <div id="loading">
+        <h3>Processing Scenarios...</h3>
+        <div class="spinner"></div>
+        <p>We are running your test scenarios. Please wait...</p>
+      </div>
+      <h3>Response</h3>
+      <pre id="response"></pre>
     </div>
-    <div class="btn-group">
-      <button class="add-scenario" onclick="addScenario()">Add Scenario</button>
-      <button class="start-scenarios" onclick="startScenarios()">Start Scenarios</button>
+    <div class="log-box">
+      <h3>Log</h3>
+      <div id="log"></div>
     </div>
-    <div id="loading">
-      <h3>Processing Scenarios...</h3>
-      <div class="spinner"></div>
-      <p>We are running your test scenarios. Please wait...</p>
-    </div>
-    <h3>Response</h3>
-    <pre id="response"></pre>
   </main>
   <script>
     let scenarioCount = 1;
@@ -184,6 +225,15 @@
       scenarioCount++;
     }
 
+    function addLogEntry(message, type = 'info') {
+      const logDiv = document.getElementById('log');
+      const logEntry = document.createElement('div');
+      logEntry.className = `log-entry ${type}`;
+      logEntry.textContent = message;
+      logDiv.appendChild(logEntry);
+      logDiv.scrollTop = logDiv.scrollHeight; // Auto-scroll to bottom
+    }
+
     async function startScenarios() {
       const loading = document.getElementById('loading');
       const responseDiv = document.getElementById('response');
@@ -204,15 +254,18 @@
       }
 
       try {
+        addLogEntry('Starting scenarios...', 'info');
         const response = await fetch('/run-scenarios', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ scenarios }),
         });
+
         const result = await response.json();
         loading.style.display = 'none';
 
         if (result.success) {
+          addLogEntry('Scenarios completed successfully!', 'success');
           responseDiv.innerHTML = `<h3>Test Results:</h3>`;
           result.results.forEach((res, index) => {
             responseDiv.innerHTML += `
@@ -228,11 +281,11 @@
             `;
           });
         } else {
-          responseDiv.innerHTML = `<p style="color: red;">Error: ${result.error}</p>`;
+          addLogEntry(`Error: ${result.error}`, 'error');
         }
       } catch (error) {
         loading.style.display = 'none';
-        responseDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        addLogEntry(`Error: ${error.message}`, 'error');
       }
     }
   </script>
