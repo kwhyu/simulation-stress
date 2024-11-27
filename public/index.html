@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Puppeteer Stress Test</title>
+  <title>Automated Scenario Tester</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
     .scenario {
       border: 1px solid #ccc;
       padding: 10px;
@@ -14,7 +18,7 @@
       display: block;
       margin-bottom: 5px;
     }
-    .scenario input, .scenario select {
+    .scenario input {
       width: 100%;
       margin-bottom: 10px;
     }
@@ -31,12 +35,15 @@
   </style>
 </head>
 <body>
-  <h1>Puppeteer Stress Test</h1>
+  <h1>Automated Scenario Tester</h1>
+
   <div id="scenariosContainer">
     <!-- Scenarios will be added dynamically here -->
   </div>
+
   <button id="addScenarioBtn">Add Scenario</button>
   <button id="startScenariosBtn">Start Scenarios</button>
+
   <div id="response"></div>
 
   <script>
@@ -56,20 +63,17 @@
         <label for="url-${scenarioCount}">URL:</label>
         <input type="text" id="url-${scenarioCount}" placeholder="https://example.com" required>
 
-        <label for="users-${scenarioCount}">Number of Users:</label>
-        <input type="number" id="users-${scenarioCount}" placeholder="1" required>
+        <label for="inputField-${scenarioCount}">CSS Selector for Input Field:</label>
+        <input type="text" id="inputField-${scenarioCount}" placeholder="#inputField" required>
 
-        <label for="element-${scenarioCount}">CSS Selector (Element to Click):</label>
-        <input type="text" id="element-${scenarioCount}" placeholder="#button1" required>
+        <label for="inputValue-${scenarioCount}">Text to Input:</label>
+        <input type="text" id="inputValue-${scenarioCount}" placeholder="Enter text here" required>
 
-        <label for="clicks-${scenarioCount}">Number of Clicks:</label>
-        <input type="number" id="clicks-${scenarioCount}" placeholder="10" required>
+        <label for="button-${scenarioCount}">CSS Selector for Button:</label>
+        <input type="text" id="button-${scenarioCount}" placeholder="#submitButton" required>
 
-        <label for="input-${scenarioCount}">Input Text (Optional):</label>
-        <input type="text" id="input-${scenarioCount}" placeholder="Enter text here">
-
-        <label for="duration-${scenarioCount}">Duration (in seconds):</label>
-        <input type="number" id="duration-${scenarioCount}" placeholder="10" required>
+        <label for="repeats-${scenarioCount}">Number of Repeats:</label>
+        <input type="number" id="repeats-${scenarioCount}" placeholder="5" required>
 
         <button class="remove-btn" onclick="removeScenario(${scenarioCount})">Remove</button>
       `;
@@ -90,19 +94,17 @@
         const scenarioDiv = document.getElementById(`scenario-${i}`);
         if (scenarioDiv) {
           const url = document.getElementById(`url-${i}`).value;
-          const users = parseInt(document.getElementById(`users-${i}`).value, 10);
-          const element = document.getElementById(`element-${i}`).value;
-          const clicks = parseInt(document.getElementById(`clicks-${i}`).value, 10);
-          const input = document.getElementById(`input-${i}`).value || null;
-          const duration = parseInt(document.getElementById(`duration-${i}`).value, 10);
+          const inputField = document.getElementById(`inputField-${i}`).value;
+          const inputValue = document.getElementById(`inputValue-${i}`).value;
+          const button = document.getElementById(`button-${i}`).value;
+          const repeats = parseInt(document.getElementById(`repeats-${i}`).value, 10);
 
           scenarios.push({
             url,
-            users,
-            element,
-            clicks,
-            input,
-            duration,
+            inputField,
+            inputValue,
+            button,
+            repeats,
           });
         }
       }

@@ -20,27 +20,27 @@ app.post('/run-scenarios', async (req, res) => {
     const browser = await puppeteer.launch({ headless: true });
 
     for (const scenario of scenarios) {
-      const { url, users, element, clicks, input, duration } = scenario;
+      const { url, inputField, inputValue, button, repeats } = scenario;
 
       const scenarioResults = [];
-      for (let user = 0; user < users; user++) {
+      for (let i = 0; i < repeats; i++) {
         const page = await browser.newPage();
         try {
           await page.goto(url);
 
-          if (input) {
-            await page.type(element, input);
+          // Input text into the specified field
+          if (inputField && inputValue) {
+            await page.type(inputField, inputValue);
           }
 
-          for (let i = 0; i < clicks; i++) {
-            await page.click(element);
+          // Click the specified button
+          if (button) {
+            await page.click(button);
           }
 
-          await page.waitForTimeout(duration * 1000);
-
-          scenarioResults.push({ user, status: 'Success' });
+          scenarioResults.push({ iteration: i + 1, status: 'Success' });
         } catch (error) {
-          scenarioResults.push({ user, error: error.message });
+          scenarioResults.push({ iteration: i + 1, error: error.message });
         } finally {
           await page.close();
         }
