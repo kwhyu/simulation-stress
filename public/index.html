@@ -329,13 +329,13 @@
           const inputValue = document.getElementById(`inputValue-${i}`)?.value;
           const button = document.getElementById(`button-${i}`)?.value;
 
-          if (!url || !repeats || !duration || !users) {
-            alert(`Scenario ${i}: Please fill all mandatory fields.`);
-            toggleButtons(true);
-            loading.style.display = 'none';
-            stopTimer();
-            return;
-          }
+          // if (!url || !repeats || !duration || !users) {
+          //   alert(`Scenario ${i}: Please fill all mandatory fields.`);
+          //   toggleButtons(true);
+          //   loading.style.display = 'none';
+          //   stopTimer();
+          //   return;
+          // }
 
           scenarios.push({ url, repeats, duration, users, inputField, inputValue, button });
         }
