@@ -34,7 +34,7 @@ app.post('/run-scenarios', async (req, res) => {
   // Inisialisasi Cluster Puppeteer
   const cluster = await Cluster.launch({
     concurrency: Cluster.CONCURRENCY_CONTEXT,
-    maxConcurrency: 10000,
+    maxConcurrency: 500,
     puppeteerOptions: {
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
