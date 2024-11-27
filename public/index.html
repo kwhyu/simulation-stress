@@ -274,9 +274,9 @@
         const repeats = parseInt(document.getElementById(`repeats-${i}`)?.value, 10);
         const duration = parseInt(document.getElementById(`duration-${i}`)?.value, 10);
         const users = parseInt(document.getElementById(`users-${i}`)?.value, 10);
-        const inputField = document.getElementById(`inputField-${i}`)?.value;
-        const inputValue = document.getElementById(`inputValue-${i}`)?.value;
-        const button = document.getElementById(`button-${i}`)?.value;
+        // const inputField = document.getElementById(`inputField-${i}`)?.value;
+        // const inputValue = document.getElementById(`inputValue-${i}`)?.value;
+        // const button = document.getElementById(`button-${i}`)?.value;
 
         if (!url || !repeats || !duration || !users) {
           alert(`Scenario ${i}: Please fill all mandatory fields.`);
