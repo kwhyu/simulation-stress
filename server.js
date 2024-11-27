@@ -57,7 +57,7 @@ app.post('/run-scenarios', async (req, res) => {
       // Validasi properti skenario
       if (!url || !users || !repeats || !duration) {
         addLogEntry(
-          `Scenario ${index + 1} skipped: Missing required fields. (url: ${url}, users: ${users}, repeats: ${repeats}, duration: ${duration})`,
+          `Scenario ${index + 1} skipped: Missing required fields.`,
           'error'
         );
         results.push({
