@@ -24,12 +24,24 @@ app.get('/get-logs', (req, res) => {
 
 // API untuk menjalankan skenario
 app.post('/run-scenarios', async (req, res) => {
-  const scenarios = req.body.scenarios;
+  let scenarios = req.body.scenarios;
 
   if (!scenarios || scenarios.length === 0) {
     res.status(400).json({ error: 'No scenarios provided.' });
     return;
   }
+
+  // Hilangkan duplikasi skenario berdasarkan properti `url`, `inputField`, dan `button`
+  const seen = new Set();
+  scenarios = scenarios.filter((scenario) => {
+    const key = `${scenario.url}|${scenario.inputField}|${scenario.button}`;
+    if (seen.has(key)) {
+      addLogEntry(`Duplicate scenario detected and removed: ${key}`, 'warning');
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 
   const results = [];
 
@@ -43,6 +55,20 @@ app.post('/run-scenarios', async (req, res) => {
 
       const { url, users, repeats, duration, inputField, inputValue, button } =
         scenario;
+
+      // Validasi properti skenario
+      if (!url || !users || !repeats || !duration) {
+        addLogEntry(
+          `Scenario ${index + 1} skipped: Missing required fields.`,
+          'error'
+        );
+        results.push({
+          scenario: index + 1,
+          status: 'Failed',
+          error: 'Missing required fields in scenario.',
+        });
+        continue;
+      }
 
       // Inisialisasi hasil skenario
       const scenarioResults = {
