@@ -3,17 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Puppeteer Stress Test</title>
+  <title>Puppeteer Stress Test Tool</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+      line-height: 1.6;
     }
+
+    header {
+      background: #1d72b8;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    main {
+      margin: 20px auto;
+      max-width: 900px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+
     .scenario {
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      background: #f7f7f7;
     }
+
+    .scenario label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .scenario input {
+      width: calc(100% - 10px);
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .btn-group {
+      margin-top: 15px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button.add-scenario {
+      background: #1d72b8;
+      color: #fff;
+    }
+
+    button.start-scenarios {
+      background: #28a745;
+      color: #fff;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
     #loading {
       font-family: Arial, sans-serif;
       position: fixed;
@@ -21,19 +93,18 @@
       left: 50%;
       transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.9);
-      padding: 20px;
+      padding: 30px;
       border-radius: 5px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
       display: none;
+      text-align: center;
     }
+
     #loading h3 {
       font-size: 20px;
       margin-bottom: 10px;
     }
-    #loading p {
-      font-size: 14px;
-      color: #555;
-    }
+
     .spinner {
       margin: 10px auto;
       border: 5px solid #ccc;
@@ -43,6 +114,7 @@
       height: 40px;
       animation: spin 0.8s linear infinite;
     }
+
     @keyframes spin {
       from {
         transform: rotate(0deg);
@@ -51,43 +123,54 @@
         transform: rotate(360deg);
       }
     }
+
+    pre {
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      margin-top: 20px;
+      overflow-x: auto;
+      max-height: 300px;
+    }
   </style>
 </head>
 <body>
-  <h1>Puppeteer Stress Test Tool</h1>
-  <div id="scenarios">
-    <div class="scenario" id="scenario-1">
-      <label>URL (Mandatory):</label>
-      <input type="text" id="url-1" placeholder="Enter URL" required>
-      <br>
-      <label>Number of Repeats (Mandatory):</label>
-      <input type="number" id="repeats-1" placeholder="Enter Number of Repeats" required>
-      <br>
-      <label>Duration Per Test (in ms) (Mandatory):</label>
-      <input type="number" id="duration-1" placeholder="Enter Duration (ms)" required>
-      <br>
-      <label>Number of Users (Mandatory):</label>
-      <input type="number" id="users-1" placeholder="Enter Number of Users" required>
-      <br>
-      <label>Input Field Selector (Optional):</label>
-      <input type="text" id="inputField-1" placeholder="e.g., #username">
-      <br>
-      <label>Input Value (Optional):</label>
-      <input type="text" id="inputValue-1" placeholder="e.g., JohnDoe">
-      <br>
-      <label>Button Selector (Optional):</label>
-      <input type="text" id="button-1" placeholder="e.g., #submit">
+  <header>
+    <h1>Puppeteer Stress Test Tool</h1>
+  </header>
+  <main>
+    <h2>Create Scenarios</h2>
+    <div id="scenarios">
+      <div class="scenario" id="scenario-1">
+        <label>URL (Mandatory):</label>
+        <input type="text" id="url-1" placeholder="Enter URL" required>
+        <label>Number of Repeats (Mandatory):</label>
+        <input type="number" id="repeats-1" placeholder="Enter Number of Repeats" required>
+        <label>Duration Per Test (in ms) (Mandatory):</label>
+        <input type="number" id="duration-1" placeholder="Enter Duration (ms)" required>
+        <label>Number of Users (Mandatory):</label>
+        <input type="number" id="users-1" placeholder="Enter Number of Users" required>
+        <label>Input Field Selector (Optional):</label>
+        <input type="text" id="inputField-1" placeholder="e.g., #username">
+        <label>Input Value (Optional):</label>
+        <input type="text" id="inputValue-1" placeholder="e.g., JohnDoe">
+        <label>Button Selector (Optional):</label>
+        <input type="text" id="button-1" placeholder="e.g., #submit">
+      </div>
     </div>
-  </div>
-  <button onclick="addScenario()">Add Scenario</button>
-  <button onclick="startScenarios()">Start Scenarios</button>
-  <div id="loading">
-    <h3>Loading...</h3>
-    <div class="spinner"></div>
-    <p>Please wait while the scenarios are being processed.</p>
-  </div>
-  <pre id="response"></pre>
-
+    <div class="btn-group">
+      <button class="add-scenario" onclick="addScenario()">Add Scenario</button>
+      <button class="start-scenarios" onclick="startScenarios()">Start Scenarios</button>
+    </div>
+    <div id="loading">
+      <h3>Processing Scenarios...</h3>
+      <div class="spinner"></div>
+      <p>We are running your test scenarios. Please wait...</p>
+    </div>
+    <h3>Response</h3>
+    <pre id="response"></pre>
+  </main>
   <script>
     let scenarioCount = 1;
 
@@ -100,22 +183,16 @@
       newScenario.innerHTML = `
         <label>URL (Mandatory):</label>
         <input type="text" id="url-${scenarioCount}" placeholder="Enter URL" required>
-        <br>
         <label>Number of Repeats (Mandatory):</label>
         <input type="number" id="repeats-${scenarioCount}" placeholder="Enter Number of Repeats" required>
-        <br>
         <label>Duration Per Test (in ms) (Mandatory):</label>
         <input type="number" id="duration-${scenarioCount}" placeholder="Enter Duration (ms)" required>
-        <br>
         <label>Number of Users (Mandatory):</label>
         <input type="number" id="users-${scenarioCount}" placeholder="Enter Number of Users" required>
-        <br>
         <label>Input Field Selector (Optional):</label>
         <input type="text" id="inputField-${scenarioCount}" placeholder="e.g., #username">
-        <br>
         <label>Input Value (Optional):</label>
         <input type="text" id="inputValue-${scenarioCount}" placeholder="e.g., JohnDoe">
-        <br>
         <label>Button Selector (Optional):</label>
         <input type="text" id="button-${scenarioCount}" placeholder="e.g., #submit">
       `;
@@ -123,7 +200,6 @@
     }
 
     async function startScenarios() {
-      // Show loading spinner
       const loading = document.getElementById('loading');
       const responseDiv = document.getElementById('response');
       responseDiv.innerHTML = '';
@@ -162,13 +238,9 @@
 
         const result = await response.json();
 
-        // Hide loading spinner
         loading.style.display = 'none';
-
-        // Display response
         responseDiv.innerText = JSON.stringify(result, null, 2);
       } catch (error) {
-        // Hide loading spinner and show error
         loading.style.display = 'none';
         responseDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
       }
