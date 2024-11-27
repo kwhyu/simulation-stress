@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Advanced Scenario Tester</title>
+  <title>Puppeteer Stress Test</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -14,88 +14,121 @@
       padding: 10px;
       margin-bottom: 10px;
     }
-    .scenario label {
-      display: block;
-      margin-bottom: 5px;
+    #loading {
+      font-family: Arial, sans-serif;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      display: none;
     }
-    .scenario input {
-      width: 100%;
+    #loading h3 {
+      font-size: 20px;
       margin-bottom: 10px;
     }
-    .remove-btn {
-      background-color: red;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      cursor: pointer;
+    #loading p {
+      font-size: 14px;
+      color: #555;
     }
-    .remove-btn:hover {
-      background-color: darkred;
+    .spinner {
+      margin: 10px auto;
+      border: 5px solid #ccc;
+      border-top: 5px solid #1d72b8;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Advanced Scenario Tester</h1>
-
-  <div id="scenariosContainer">
-    <!-- Scenarios will be added dynamically here -->
+  <h1>Puppeteer Stress Test Tool</h1>
+  <div id="scenarios">
+    <div class="scenario" id="scenario-1">
+      <label>URL (Mandatory):</label>
+      <input type="text" id="url-1" placeholder="Enter URL" required>
+      <br>
+      <label>Number of Repeats (Mandatory):</label>
+      <input type="number" id="repeats-1" placeholder="Enter Number of Repeats" required>
+      <br>
+      <label>Duration Per Test (in ms) (Mandatory):</label>
+      <input type="number" id="duration-1" placeholder="Enter Duration (ms)" required>
+      <br>
+      <label>Number of Users (Mandatory):</label>
+      <input type="number" id="users-1" placeholder="Enter Number of Users" required>
+      <br>
+      <label>Input Field Selector (Optional):</label>
+      <input type="text" id="inputField-1" placeholder="e.g., #username">
+      <br>
+      <label>Input Value (Optional):</label>
+      <input type="text" id="inputValue-1" placeholder="e.g., JohnDoe">
+      <br>
+      <label>Button Selector (Optional):</label>
+      <input type="text" id="button-1" placeholder="e.g., #submit">
+    </div>
   </div>
-
-  <button id="addScenarioBtn">Add Scenario</button>
-  <button id="startScenariosBtn">Start Scenarios</button>
-
-  <div id="response"></div>
+  <button onclick="addScenario()">Add Scenario</button>
+  <button onclick="startScenarios()">Start Scenarios</button>
+  <div id="loading">
+    <h3>Loading...</h3>
+    <div class="spinner"></div>
+    <p>Please wait while the scenarios are being processed.</p>
+  </div>
+  <pre id="response"></pre>
 
   <script>
-    let scenarioCount = 0;
+    let scenarioCount = 1;
 
-    // Add a new scenario
     function addScenario() {
       scenarioCount++;
-      const container = document.getElementById('scenariosContainer');
-
-      const scenarioDiv = document.createElement('div');
-      scenarioDiv.classList.add('scenario');
-      scenarioDiv.setAttribute('id', `scenario-${scenarioCount}`);
-
-      scenarioDiv.innerHTML = `
-        <h3>Scenario ${scenarioCount}</h3>
-        
-        <label for="url-${scenarioCount}">URL (Mandatory):</label>
-        <input type="text" id="url-${scenarioCount}" placeholder="https://example.com" required>
-
-        <label for="repeats-${scenarioCount}">Number of Repeats (Mandatory):</label>
-        <input type="number" id="repeats-${scenarioCount}" placeholder="5" required>
-
-        <label for="duration-${scenarioCount}">Duration Per Test (in ms) (Mandatory):</label>
-        <input type="number" id="duration-${scenarioCount}" placeholder="1000" required>
-
-        <label for="users-${scenarioCount}">Number of Users (Mandatory):</label>
-        <input type="number" id="users-${scenarioCount}" placeholder="10" required>
-
-        <label for="inputField-${scenarioCount}">CSS Selector for Input Field (Optional):</label>
-        <input type="text" id="inputField-${scenarioCount}" placeholder="#inputField">
-
-        <label for="inputValue-${scenarioCount}">Text to Input (Optional):</label>
-        <input type="text" id="inputValue-${scenarioCount}" placeholder="Enter text here">
-
-        <label for="button-${scenarioCount}">CSS Selector for Button (Optional):</label>
-        <input type="text" id="button-${scenarioCount}" placeholder="#submitButton">
-
-        <button class="remove-btn" onclick="removeScenario(${scenarioCount})">Remove</button>
+      const scenariosDiv = document.getElementById('scenarios');
+      const newScenario = document.createElement('div');
+      newScenario.className = 'scenario';
+      newScenario.id = `scenario-${scenarioCount}`;
+      newScenario.innerHTML = `
+        <label>URL (Mandatory):</label>
+        <input type="text" id="url-${scenarioCount}" placeholder="Enter URL" required>
+        <br>
+        <label>Number of Repeats (Mandatory):</label>
+        <input type="number" id="repeats-${scenarioCount}" placeholder="Enter Number of Repeats" required>
+        <br>
+        <label>Duration Per Test (in ms) (Mandatory):</label>
+        <input type="number" id="duration-${scenarioCount}" placeholder="Enter Duration (ms)" required>
+        <br>
+        <label>Number of Users (Mandatory):</label>
+        <input type="number" id="users-${scenarioCount}" placeholder="Enter Number of Users" required>
+        <br>
+        <label>Input Field Selector (Optional):</label>
+        <input type="text" id="inputField-${scenarioCount}" placeholder="e.g., #username">
+        <br>
+        <label>Input Value (Optional):</label>
+        <input type="text" id="inputValue-${scenarioCount}" placeholder="e.g., JohnDoe">
+        <br>
+        <label>Button Selector (Optional):</label>
+        <input type="text" id="button-${scenarioCount}" placeholder="e.g., #submit">
       `;
-
-      container.appendChild(scenarioDiv);
+      scenariosDiv.appendChild(newScenario);
     }
 
-    // Remove a specific scenario
-    function removeScenario(id) {
-      const scenarioDiv = document.getElementById(`scenario-${id}`);
-      scenarioDiv.remove();
-    }
-
-    // Start all scenarios
     async function startScenarios() {
+      // Show loading spinner
+      const loading = document.getElementById('loading');
+      const responseDiv = document.getElementById('response');
+      responseDiv.innerHTML = '';
+      loading.style.display = 'block';
+
       const scenarios = [];
       for (let i = 1; i <= scenarioCount; i++) {
         const scenarioDiv = document.getElementById(`scenario-${i}`);
@@ -104,7 +137,6 @@
           const repeats = parseInt(document.getElementById(`repeats-${i}`).value, 10);
           const duration = parseInt(document.getElementById(`duration-${i}`).value, 10);
           const users = parseInt(document.getElementById(`users-${i}`).value, 10);
-
           const inputField = document.getElementById(`inputField-${i}`).value;
           const inputValue = document.getElementById(`inputValue-${i}`).value;
           const button = document.getElementById(`button-${i}`).value;
@@ -121,20 +153,26 @@
         }
       }
 
-      // Send all scenarios to the server
-      const response = await fetch('/run-scenarios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenarios }),
-      });
+      try {
+        const response = await fetch('/run-scenarios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scenarios }),
+        });
 
-      const result = await response.json();
-      document.getElementById('response').innerText = JSON.stringify(result, null, 2);
+        const result = await response.json();
+
+        // Hide loading spinner
+        loading.style.display = 'none';
+
+        // Display response
+        responseDiv.innerText = JSON.stringify(result, null, 2);
+      } catch (error) {
+        // Hide loading spinner and show error
+        loading.style.display = 'none';
+        responseDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+      }
     }
-
-    // Event listeners for buttons
-    document.getElementById('addScenarioBtn').addEventListener('click', addScenario);
-    document.getElementById('startScenariosBtn').addEventListener('click', startScenarios);
   </script>
 </body>
 </html>
