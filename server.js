@@ -26,22 +26,20 @@ app.get('/get-logs', (req, res) => {
 app.post('/run-scenarios', async (req, res) => {
   let scenarios = req.body.scenarios;
 
+  // Validasi input
   if (!scenarios || scenarios.length === 0) {
     res.status(400).json({ error: 'No scenarios provided.' });
     return;
   }
 
-  // Hilangkan duplikasi skenario berdasarkan properti `url`, `inputField`, dan `button`
-  const seen = new Set();
-  scenarios = scenarios.filter((scenario) => {
-    const key = `${scenario.url}|${scenario.inputField}|${scenario.button}`;
-    if (seen.has(key)) {
-      addLogEntry(`Duplicate scenario detected and removed: ${key}`, 'warning');
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
+  addLogEntry(`Received scenarios: ${JSON.stringify(scenarios)}`);
+
+  // Jika lebih dari satu skenario, ambil hanya satu
+  if (scenarios.length > 1) {
+    addLogEntry(`Warning: Multiple scenarios detected (${scenarios.length}).`);
+    scenarios = scenarios.slice(0, 1); // Ambil hanya skenario pertama
+    addLogEntry(`Only the first scenario will be executed.`);
+  }
 
   const results = [];
 
@@ -164,8 +162,9 @@ app.post('/run-scenarios', async (req, res) => {
     }
   }
 
-  res.json({ results });
+  res.json({ results: results.slice(0, 1) });
 });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
