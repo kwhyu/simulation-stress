@@ -326,19 +326,34 @@
         loading.style.display = 'block';
         toggleButtons(false);
         startTimer();
-
+        
         const scenarios = [];
         for (let i = 0; i < scenarioCount; i++) {
-          const url = document.getElementById(`url-${i}`)?.value;
-          const repeats = parseInt(document.getElementById(`repeats-${i}`)?.value, 10);
-          const duration = parseInt(document.getElementById(`duration-${i}`)?.value, 10);
-          const users = parseInt(document.getElementById(`users-${i}`)?.value, 10);
-          const inputField = document.getElementById(`inputField-${i}`)?.value;
-          const inputValue = document.getElementById(`inputValue-${i}`)?.value;
-          const button = document.getElementById(`button-${i}`)?.value;
+          // const url = document.getElementById(`url-${i}`)?.value;
+          // const repeats = parseInt(document.getElementById(`repeats-${i}`)?.value, 10);
+          // const duration = parseInt(document.getElementById(`duration-${i}`)?.value, 10);
+          // const users = parseInt(document.getElementById(`users-${i}`)?.value, 10);
+          // const inputField = document.getElementById(`inputField-${i}`)?.value;
+          // const inputValue = document.getElementById(`inputValue-${i}`)?.value;
+          // const button = document.getElementById(`button-${i}`)?.value;
+          const url = document.getElementById(`url-${i}`);
+          const repeats = document.getElementById(`repeats-${i}`);
+          const duration = document.getElementById(`duration-${i}`);
+          const users = document.getElementById(`users-${i}`);
+          const inputField = document.getElementById(`inputField-${i}`);
+          const inputValue = document.getElementById(`inputValue-${i}`);
+          const button = document.getElementById(`button-${i}`);
 
-
-          scenarios.push({ url, repeats, duration, users, inputField, inputValue, button });
+          // scenarios.push({ url, repeats, duration, users, inputField, inputValue, button });
+          scenarios.push({
+            url: url.value,
+            repeats: parseInt(repeats.value, 10),
+            duration: parseInt(duration.value, 10),
+            users: parseInt(users.value, 10),
+            inputField: inputField.value || undefined,
+            inputValue: inputValue.value || undefined,
+            button: button.value || undefined
+          });
         }
 
         try {
