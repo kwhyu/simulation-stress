@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puppeteer Stress Test</title>
+  <style>
+    .scenario {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .scenario label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .scenario input, .scenario textarea {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .remove-btn {
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .remove-btn:hover {
+      background-color: darkred;
+    }
+  </style>
+</head>
+<body>
+  <h1>Puppeteer Stress Test</h1>
+  <div id="scenariosContainer">
+    <!-- Scenarios will be added dynamically here -->
+  </div>
+  <button id="addScenarioBtn">Add Scenario</button>
+  <button id="startScenariosBtn">Start Scenarios</button>
+  <div id="response"></div>
+
+  <script>
+    let scenarioCount = 0;
+
+    // Add a new scenario
+    function addScenario() {
+      scenarioCount++;
+      const container = document.getElementById('scenariosContainer');
+
+      const scenarioDiv = document.createElement('div');
+      scenarioDiv.classList.add('scenario');
+      scenarioDiv.setAttribute('id', `scenario-${scenarioCount}`);
+
+      scenarioDiv.innerHTML = `
+        <h3>Scenario ${scenarioCount}</h3>
+        <label for="url-${scenarioCount}">URL:</label>
+        <input type="text" id="url-${scenarioCount}" name="url-${scenarioCount}" placeholder="https://example.com" required>
+
+        <label for="actions-${scenarioCount}">Actions (JSON):</label>
+        <textarea id="actions-${scenarioCount}" name="actions-${scenarioCount}" rows="5" placeholder='[{"selector": "#button1", "clicks": 10}]' required></textarea>
+
+        <button class="remove-btn" onclick="removeScenario(${scenarioCount})">Remove</button>
+      `;
+
+      container.appendChild(scenarioDiv);
+    }
+
+    // Remove a specific scenario
+    function removeScenario(id) {
+      const scenarioDiv = document.getElementById(`scenario-${id}`);
+      scenarioDiv.remove();
+    }
+
+    // Start all scenarios
+    async function startScenarios() {
+      const scenarios = [];
+      for (let i = 1; i <= scenarioCount; i++) {
+        const scenarioDiv = document.getElementById(`scenario-${i}`);
+        if (scenarioDiv) {
+          const url = document.getElementById(`url-${i}`).value;
+          const actions = document.getElementById(`actions-${i}`).value;
+
+          try {
+            scenarios.push({
+              url,
+              actions: JSON.parse(actions),
+            });
+          } catch (error) {
+            document.getElementById('response').innerText = `Error in Scenario ${i}: Invalid JSON in actions`;
+            return;
+          }
+        }
+      }
+
+      // Send all scenarios to the server
+      const response = await fetch('/run-scenarios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scenarios }),
+      });
+
+      const result = await response.json();
+      document.getElementById('response').innerText = JSON.stringify(result, null, 2);
+    }
+
+    // Event listeners for buttons
+    document.getElementById('addScenarioBtn').addEventListener('click', addScenario);
+    document.getElementById('startScenariosBtn').addEventListener('click', startScenarios);
+  </script>
+</body>
+</html>
