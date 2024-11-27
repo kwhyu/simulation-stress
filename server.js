@@ -3,93 +3,92 @@ const puppeteer = require('puppeteer');
 const bodyParser = require('body-parser');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(bodyParser.json());
+app.use(express.static('public')); // Serve the HTML file in the "public" directory
 
 app.post('/run-scenarios', async (req, res) => {
   const { scenarios } = req.body;
 
-  if (!scenarios || scenarios.length === 0) {
-    return res.status(400).json({ error: 'No scenarios provided' });
+  if (!scenarios || !Array.isArray(scenarios) || scenarios.length === 0) {
+    return res.status(400).json({ error: 'Invalid or empty scenarios.' });
   }
 
-  const results = [];
+  try {
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
 
-  for (const scenario of scenarios) {
-    const { url, repeats, duration, users, inputField, inputValue, button } = scenario;
+    const results = [];
+    for (const scenario of scenarios) {
+      const { url, repeats, duration, users, inputField, inputValue, button } = scenario;
 
-    if (!url || !repeats || !duration || !users) {
-      return res.status(400).json({ error: 'Missing mandatory fields in scenario' });
-    }
+      const scenarioResults = {
+        url,
+        totalTests: users * repeats,
+        successCount: 0,
+        errorCount: 0,
+        totalLoadTime: 0,
+        avgLoadTime: 0,
+        successRate: 0,
+        errorRate: 0,
+      };
 
-    const scenarioResults = {
-      url,
-      successRate: 0,
-      errorRate: 0,
-      avgLoadTime: 0,
-      totalTests: repeats * users,
-      successCount: 0,
-      errorCount: 0,
-    };
+      for (let i = 0; i < users; i++) {
+        for (let j = 0; j < repeats; j++) {
+          const page = await browser.newPage();
+          try {
+            const startTime = performance.now();
+            await page.goto(url, { waitUntil: 'load', timeout: duration });
+            const endTime = performance.now();
 
-    let totalLoadTime = 0;
+            scenarioResults.totalLoadTime += endTime - startTime;
 
-    try {
-      const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
+            if (inputField && inputValue) {
+              await page.type(inputField, inputValue);
+            }
 
-      for (let i = 0; i < repeats; i++) {
-        const promises = [];
+            if (button) {
+              await page.click(button);
+            }
 
-        for (let j = 0; j < users; j++) {
-          promises.push(
-            (async () => {
-              const page = await browser.newPage();
-              try {
-                const startTime = performance.now();
-                await page.goto(url, { waitUntil: 'load', timeout: duration });
-                const endTime = performance.now();
-
-                totalLoadTime += endTime - startTime;
-
-                if (inputField && inputValue) {
-                  await page.type(inputField, inputValue);
-                }
-
-                if (button) {
-                  await page.click(button);
-                  await page.waitForTimeout(500); // Wait for action completion (adjust as needed)
-                }
-
-                scenarioResults.successCount++;
-              } catch (err) {
-                scenarioResults.errorCount++;
-              } finally {
-                await page.close();
-              }
-            })()
-          );
+            scenarioResults.successCount++;
+          } catch (error) {
+            console.error('Error during test:', error.message);
+            scenarioResults.errorCount++;
+          } finally {
+            await page.close();
+          }
         }
-
-        await Promise.all(promises);
       }
 
-      await browser.close();
-    } catch (err) {
-      console.error('Error running scenario:', err);
-      scenarioResults.errorCount += repeats * users;
+      scenarioResults.avgLoadTime =
+        scenarioResults.successCount > 0
+          ? (scenarioResults.totalLoadTime / scenarioResults.successCount).toFixed(2)
+          : 0;
+
+      scenarioResults.successRate = (
+        (scenarioResults.successCount / scenarioResults.totalTests) *
+        100
+      ).toFixed(2);
+
+      scenarioResults.errorRate = (
+        (scenarioResults.errorCount / scenarioResults.totalTests) *
+        100
+      ).toFixed(2);
+
+      results.push(scenarioResults);
     }
 
-    // Calculate metrics
-    scenarioResults.successRate =
-      ((scenarioResults.successCount / scenarioResults.totalTests) * 100).toFixed(2);
-    scenarioResults.errorRate =
-      ((scenarioResults.errorCount / scenarioResults.totalTests) * 100).toFixed(2);
-    scenarioResults.avgLoadTime = (totalLoadTime / scenarioResults.successCount).toFixed(2);
-
-    results.push(scenarioResults);
+    await browser.close();
+    res.json({ success: true, results });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
-
-  res.json({ success: true, results });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
