@@ -230,122 +230,98 @@
       </div>
     </main>
     <script>
-      let scenarioCount = 0;
-
+      let scenarioCount = 1;
+      let logInterval = null;
+    
       function addScenario() {
-        scenarioCount++;
-        const scenariosDiv = document.getElementById("scenarios");
-        const newScenario = document.createElement("div");
-        newScenario.className = "scenario";
+        const scenariosDiv = document.getElementById('scenarios');
+        const newScenario = document.createElement('div');
+        newScenario.className = 'scenario';
         newScenario.id = `scenario-${scenarioCount}`;
         newScenario.innerHTML = `
-        <button class="remove-button" onclick="removeScenario(${scenarioCount})">Remove</button>
-        <label>URL (Mandatory):</label>
-        <input type="text" id="url-${scenarioCount}" placeholder="Enter URL" required>
-        <label>Number of Repeats (Mandatory):</label>
-        <input type="number" id="repeats-${scenarioCount}" placeholder="Enter Number of Repeats" required>
-        <label>Duration Per Test (in ms) (Mandatory):</label>
-        <input type="number" id="duration-${scenarioCount}" placeholder="Enter Duration (ms)" required>
-        <label>Number of Users (Mandatory):</label>
-        <input type="number" id="users-${scenarioCount}" placeholder="Enter Number of Users" required>
-        <label>Input Field Selector (Optional):</label>
-        <input type="text" id="inputField-${scenarioCount}" placeholder="e.g., #username">
-        <label>Input Value (Optional):</label>
-        <input type="text" id="inputValue-${scenarioCount}" placeholder="e.g., JohnDoe">
-        <label>Button Selector (Optional):</label>
-        <input type="text" id="button-${scenarioCount}" placeholder="e.g., #submit">
-      `;
+            <button class="remove-button" onclick="removeScenario(${scenarioCount})">Remove</button>
+            <label>URL (Mandatory):</label>
+            <input type="text" id="url-${scenarioCount}" placeholder="Enter URL" required>
+            <label>Number of Repeats (Mandatory):</label>
+            <input type="number" id="repeats-${scenarioCount}" placeholder="Enter Number of Repeats" required>
+            <label>Duration Per Test (in ms) (Mandatory):</label>
+            <input type="number" id="duration-${scenarioCount}" placeholder="Enter Duration (ms)" required>
+            <label>Number of Users (Mandatory):</label>
+            <input type="number" id="users-${scenarioCount}" placeholder="Enter Number of Users" required>
+            <label>Input Field Selector (Optional):</label>
+            <input type="text" id="inputField-${scenarioCount}" placeholder="e.g., #username">
+            <label>Input Value (Optional):</label>
+            <input type="text" id="inputValue-${scenarioCount}" placeholder="e.g., JohnDoe">
+            <label>Button Selector (Optional):</label>
+            <input type="text" id="button-${scenarioCount}" placeholder="e.g., #submit">
+          `;
         scenariosDiv.appendChild(newScenario);
+        scenarioCount++;
       }
-
-      function removeScenario(id) {
-        const scenario = document.getElementById(`scenario-${id}`);
-        if (scenario) scenario.remove();
+    
+      function fetchLogs() {
+        fetch('/get-logs')
+          .then(response => response.json())
+          .then(logEntries => {
+            const log = document.getElementById('log');
+            log.innerHTML = '';
+            logEntries.forEach(entry => {
+              const logEntry = document.createElement('div');
+              logEntry.className = `log-entry ${entry.type}`;
+              logEntry.textContent = `${new Date(entry.timestamp).toLocaleString()}: ${entry.message}`;
+              log.appendChild(logEntry);
+            });
+            log.scrollTop = log.scrollHeight;
+          })
+          .catch(error => console.error('Error fetching logs:', error));
       }
-
-      function toggleLoading(state) {
-        const loading = document.getElementById("loading");
-        const buttons = document.querySelectorAll("button");
-        loading.style.display = state ? "block" : "none";
-        buttons.forEach((btn) => (btn.disabled = state));
-      }
-
+    
       async function startScenarios() {
-        const loading = document.getElementById("loading");
-        const responseDiv = document.getElementById("response");
-        responseDiv.innerHTML = "";
-        loading.style.display = "block";
+        const loading = document.getElementById('loading');
+        const responseDiv = document.getElementById('response');
+        responseDiv.innerHTML = '';
+        loading.style.display = 'block';
         toggleButtons(false);
-
+    
         const scenarios = [];
         for (let i = 0; i <= scenarioCount; i++) {
           const url = document.getElementById(`url-${i}`)?.value;
-          const repeats = parseInt(
-            document.getElementById(`repeats-${i}`)?.value,
-            10
-          );
-          const duration = parseInt(
-            document.getElementById(`duration-${i}`)?.value,
-            10
-          );
-          const users = parseInt(
-            document.getElementById(`users-${i}`)?.value,
-            10
-          );
+          const repeats = parseInt(document.getElementById(`repeats-${i}`)?.value, 10);
+          const duration = parseInt(document.getElementById(`duration-${i}`)?.value, 10);
+          const users = parseInt(document.getElementById(`users-${i}`)?.value, 10);
           const inputField = document.getElementById(`inputField-${i}`)?.value;
           const inputValue = document.getElementById(`inputValue-${i}`)?.value;
           const button = document.getElementById(`button-${i}`)?.value;
-
+    
           if (!url || !repeats || !duration || !users) {
             alert(`Scenario ${i}: Please fill all mandatory fields.`);
             toggleButtons(true);
-            loading.style.display = "none";
+            loading.style.display = 'none';
             return;
           }
-
-          scenarios.push({
-            url,
-            repeats,
-            duration,
-            users,
-            inputField,
-            inputValue,
-            button,
-          });
+    
+          scenarios.push({ url, repeats, duration, users, inputField, inputValue, button });
         }
-
+    
         try {
-          const res = await fetch("/run-scenarios", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+          logInterval = setInterval(fetchLogs, 1000); // Mulai polling log
+          const res = await fetch('/run-scenarios', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ scenarios }),
           });
-
-          // Validasi apakah respons berupa JSON
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-
+    
           const data = await res.json();
           responseDiv.textContent = JSON.stringify(data, null, 2);
-          addLogEntry("Scenarios executed successfully.", "success");
+          addLogEntry('Scenarios executed successfully.', 'success');
         } catch (error) {
           responseDiv.textContent = `Error: ${error.message}`;
-          addLogEntry(`Error: ${error.message}`, "error");
+          addLogEntry(`Error: ${error.message}`, 'error');
         } finally {
-          loading.style.display = "none";
+          clearInterval(logInterval); // Hentikan polling log
+          loading.style.display = 'none';
           toggleButtons(true);
         }
       }
-
-      function addLogEntry(message, type) {
-        const log = document.getElementById("log");
-        const entry = document.createElement("div");
-        entry.className = `log-entry ${type}`;
-        entry.textContent = `${new Date().toLocaleString()}: ${message}`;
-        log.appendChild(entry);
-        log.scrollTop = log.scrollHeight;
-      }
     </script>
-  </body>
-</html>
+    

@@ -5,14 +5,33 @@ const bodyParser = require('body-parser');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Variabel global untuk menyimpan log
+const logEntries = [];
+
+// Fungsi untuk menambahkan log
+function addLogEntry(message, type = 'info') {
+  const log = {
+    timestamp: new Date().toISOString(),
+    message,
+    type,
+  };
+  logEntries.push(log);
+  console.log(`${log.timestamp} - ${type.toUpperCase()}: ${message}`);
+}
+
 // Middleware untuk parsing JSON
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
 // Middleware untuk logging permintaan
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  addLogEntry(`${req.method} ${req.path}`, 'request');
   next();
+});
+
+// Endpoint untuk mendapatkan log
+app.get('/get-logs', (req, res) => {
+  res.json(logEntries);
 });
 
 // Endpoint utama
@@ -38,8 +57,11 @@ app.post('/run-scenarios', async (req, res, next) => {
 
       // Validasi setiap skenario
       if (!url || !repeats || !duration || !users) {
+        addLogEntry('Missing mandatory fields in scenario.', 'error');
         throw new Error('Missing mandatory fields in scenario.');
       }
+
+      addLogEntry(`Starting scenario for URL: ${url}`, 'info');
 
       const scenarioResults = {
         url,
@@ -73,9 +95,13 @@ app.post('/run-scenarios', async (req, res, next) => {
             }
 
             scenarioResults.successCount++;
+            addLogEntry(`Test successful for URL: ${url}`, 'success');
           } catch (error) {
-            console.error(`Error during test on ${url}:`, error.message);
             scenarioResults.errorCount++;
+            addLogEntry(
+              `Error during test for URL: ${url} - ${error.message}`,
+              'error'
+            );
           } finally {
             await page.close();
           }
@@ -99,13 +125,14 @@ app.post('/run-scenarios', async (req, res, next) => {
       ).toFixed(2);
 
       results.push(scenarioResults);
+      addLogEntry(`Scenario completed for URL: ${url}`, 'info');
     }
 
     // Kirimkan hasil sebagai JSON
-    console.log('Response to client:', { success: true, results });
+    addLogEntry('All scenarios completed successfully.', 'success');
     res.json({ success: true, results });
   } catch (error) {
-    console.error('Server error:', error.message);
+    addLogEntry(`Server error: ${error.message}`, 'error');
     next(error);
   } finally {
     // Tutup browser jika sudah selesai
@@ -115,11 +142,11 @@ app.post('/run-scenarios', async (req, res, next) => {
 
 // Middleware global untuk error handling
 app.use((err, req, res, next) => {
-  console.error(`Error: ${err.message}`);
+  addLogEntry(`Error: ${err.message}`, 'error');
   res.status(500).json({ success: false, error: err.message });
 });
 
 // Jalankan server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  addLogEntry(`Server running on port ${PORT}`, 'info');
 });
