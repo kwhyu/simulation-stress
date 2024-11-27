@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Puppeteer Stress Test Tool</title>
   <style>
+    /* Tetap sama seperti sebelumnya */
     body {
       font-family: 'Arial', sans-serif;
       margin: 0;
@@ -199,7 +200,6 @@
     <div class="content">
       <h2>Create Scenarios</h2>
       <div id="scenarios">
-        <!-- Scenarios dynamically added here -->
       </div>
       <div class="btn-group">
         <button class="add-scenario" id="add-scenario-btn" onclick="addScenario()">Add Scenario</button>
@@ -219,9 +219,10 @@
     </div>
   </main>
   <script>
-    let scenarioCount = 1;
+    let scenarioCount = 0;
 
     function addScenario() {
+      scenarioCount++;
       const scenariosDiv = document.getElementById('scenarios');
       const newScenario = document.createElement('div');
       newScenario.className = 'scenario';
@@ -244,44 +245,38 @@
         <input type="text" id="button-${scenarioCount}" placeholder="e.g., #submit">
       `;
       scenariosDiv.appendChild(newScenario);
-      scenarioCount++;
     }
 
     function removeScenario(id) {
       const scenario = document.getElementById(`scenario-${id}`);
-      if (scenario) {
-        scenario.remove();
-      }
+      if (scenario) scenario.remove();
     }
 
-    function toggleButtons(state) {
-      document.getElementById('add-scenario-btn').disabled = !state;
-      document.getElementById('start-scenarios-btn').disabled = !state;
-      const removeButtons = document.querySelectorAll('.remove-button');
-      removeButtons.forEach(button => button.disabled = !state);
+    function toggleLoading(state) {
+      const loading = document.getElementById('loading');
+      const buttons = document.querySelectorAll('button');
+      loading.style.display = state ? 'block' : 'none';
+      buttons.forEach(btn => (btn.disabled = state));
     }
 
     async function startScenarios() {
-      const loading = document.getElementById('loading');
       const responseDiv = document.getElementById('response');
-      responseDiv.innerHTML = '';
-      loading.style.display = 'block';
-      toggleButtons(false);
+      responseDiv.textContent = '';
+      toggleLoading(true);
 
       const scenarios = [];
-      for (let i = 0; i <= scenarioCount; i++) {
+      for (let i = 1; i <= scenarioCount; i++) {
         const url = document.getElementById(`url-${i}`)?.value;
         const repeats = parseInt(document.getElementById(`repeats-${i}`)?.value, 10);
         const duration = parseInt(document.getElementById(`duration-${i}`)?.value, 10);
         const users = parseInt(document.getElementById(`users-${i}`)?.value, 10);
-        // const inputField = document.getElementById(`inputField-${i}`)?.value;
-        // const inputValue = document.getElementById(`inputValue-${i}`)?.value;
-        // const button = document.getElementById(`button-${i}`)?.value;
+        const inputField = document.getElementById(`inputField-${i}`)?.value;
+        const inputValue = document.getElementById(`inputValue-${i}`)?.value;
+        const button = document.getElementById(`button-${i}`)?.value;
 
         if (!url || !repeats || !duration || !users) {
           alert(`Scenario ${i}: Please fill all mandatory fields.`);
-          toggleButtons(true);
-          loading.style.display = 'none';
+          toggleLoading(false);
           return;
         }
 
@@ -301,8 +296,7 @@
         responseDiv.textContent = error.message;
         addLogEntry(`Error: ${error.message}`, 'error');
       } finally {
-        loading.style.display = 'none';
-        toggleButtons(true);
+        toggleLoading(false);
       }
     }
 
