@@ -200,51 +200,68 @@
     }
 
     async function startScenarios() {
-      const loading = document.getElementById('loading');
-      const responseDiv = document.getElementById('response');
-      responseDiv.innerHTML = '';
-      loading.style.display = 'block';
+  const loading = document.getElementById('loading');
+  const responseDiv = document.getElementById('response');
+  responseDiv.innerHTML = '';
+  loading.style.display = 'block';
 
-      const scenarios = [];
-      for (let i = 1; i <= scenarioCount; i++) {
-        const scenarioDiv = document.getElementById(`scenario-${i}`);
-        if (scenarioDiv) {
-          const url = document.getElementById(`url-${i}`).value;
-          const repeats = parseInt(document.getElementById(`repeats-${i}`).value, 10);
-          const duration = parseInt(document.getElementById(`duration-${i}`).value, 10);
-          const users = parseInt(document.getElementById(`users-${i}`).value, 10);
-          const inputField = document.getElementById(`inputField-${i}`).value;
-          const inputValue = document.getElementById(`inputValue-${i}`).value;
-          const button = document.getElementById(`button-${i}`).value;
+  const scenarios = [];
+  for (let i = 1; i <= scenarioCount; i++) {
+    const scenarioDiv = document.getElementById(`scenario-${i}`);
+    if (scenarioDiv) {
+      const url = document.getElementById(`url-${i}`).value;
+      const repeats = parseInt(document.getElementById(`repeats-${i}`).value, 10);
+      const duration = parseInt(document.getElementById(`duration-${i}`).value, 10);
+      const users = parseInt(document.getElementById(`users-${i}`).value, 10);
+      const inputField = document.getElementById(`inputField-${i}`).value;
+      const inputValue = document.getElementById(`inputValue-${i}`).value;
+      const button = document.getElementById(`button-${i}`).value;
 
-          scenarios.push({
-            url,
-            repeats,
-            duration,
-            users,
-            inputField: inputField || null,
-            inputValue: inputValue || null,
-            button: button || null,
-          });
-        }
-      }
-
-      try {
-        const response = await fetch('/run-scenarios', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scenarios }),
-        });
-
-        const result = await response.json();
-
-        loading.style.display = 'none';
-        responseDiv.innerText = JSON.stringify(result, null, 2);
-      } catch (error) {
-        loading.style.display = 'none';
-        responseDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
-      }
+      scenarios.push({
+        url,
+        repeats,
+        duration,
+        users,
+        inputField: inputField || null,
+        inputValue: inputValue || null,
+        button: button || null,
+      });
     }
+  }
+
+  try {
+    const response = await fetch('/run-scenarios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenarios }),
+    });
+
+    const result = await response.json();
+    loading.style.display = 'none';
+
+    if (result.success) {
+      responseDiv.innerHTML = `<h3>Test Results:</h3>`;
+      result.results.forEach((res, index) => {
+        responseDiv.innerHTML += `
+          <h4>Scenario ${index + 1}:</h4>
+          <p>URL: ${res.url}</p>
+          <p>Total Tests: ${res.totalTests}</p>
+          <p>Success Count: ${res.successCount}</p>
+          <p>Error Count: ${res.errorCount}</p>
+          <p>Success Rate: ${res.successRate}%</p>
+          <p>Error Rate: ${res.errorRate}%</p>
+          <p>Average Load Time: ${res.avgLoadTime} ms</p>
+          <hr />
+        `;
+      });
+    } else {
+      responseDiv.innerHTML = `<p style="color: red;">Error: ${result.error}</p>`;
+    }
+  } catch (error) {
+    loading.style.display = 'none';
+    responseDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+  }
+}
   </script>
 </body>
 </html>
