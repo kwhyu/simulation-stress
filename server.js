@@ -72,7 +72,8 @@ app.post('/run-scenarios', async (req, res) => {
   res.json({ results });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
+  addLogEntry(`Server running on port ${PORT}`, 'info');
 });
