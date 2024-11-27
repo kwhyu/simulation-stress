@@ -17,7 +17,11 @@ app.post('/run-scenarios', async (req, res) => {
 
   const results = [];
   try {
-    const browser = await puppeteer.launch({ headless: true });
+    // Modify Puppeteer launch configuration
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
 
     for (const scenario of scenarios) {
       const { url, repeats, duration, users, inputField, inputValue, button } = scenario;
