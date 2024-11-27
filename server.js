@@ -34,10 +34,10 @@ app.post('/run-scenarios', async (req, res) => {
   // Inisialisasi Cluster Puppeteer
   const cluster = await Cluster.launch({
     concurrency: Cluster.CONCURRENCY_CONTEXT,
-    maxConcurrency: 100,
+    maxConcurrency: 100, // Maksimal 20 tab aktif secara bersamaan
     puppeteerOptions: {
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
     },
   });
 
