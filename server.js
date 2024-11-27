@@ -38,7 +38,10 @@ app.post('/run-scenarios', async (req, res) => {
     try {
       addLogEntry(`Running scenario ${index + 1}...`);
 
-      const browser = await puppeteer.launch();
+      // Modifikasi ini menambahkan opsi `--no-sandbox` dan `--disable-setuid-sandbox`
+      const browser = await puppeteer.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
       const page = await browser.newPage();
       await page.goto(scenario.url);
 
@@ -73,6 +76,7 @@ app.post('/run-scenarios', async (req, res) => {
 
   res.json({ results });
 });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
