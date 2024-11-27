@@ -44,9 +44,9 @@ app.post('/run-scenarios', async (req, res) => {
       const page = await browser.newPage();
 
       // Validasi URL
-      if (!scenario.url || !/^https?:\/\//.test(scenario.url)) {
-        throw new Error(`Invalid URL: ${scenario.url}`);
-      }
+      // if (!scenario.url || !/^https?:\/\//.test(scenario.url)) {
+      //   throw new Error(`Invalid URL: ${scenario.url}`);
+      // }
       await page.goto(scenario.url);
       addLogEntry(`Scenario ${index + 1}: Opened URL ${scenario.url}`, 'success');
 
