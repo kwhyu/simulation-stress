@@ -162,9 +162,9 @@ app.post('/run-scenarios', async (req, res) => {
     }
   }
 
-  // Mengembalikan hanya hasil skenario pertama, meskipun ada banyak skenario
   res.json({ results: results.slice(0, 1) });
 });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
