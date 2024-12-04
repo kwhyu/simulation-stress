@@ -50,34 +50,97 @@ app.post('/run-scenarios', async (req, res) => {
     const { url, users, repeats, inputField, inputValue, button } = scenario;
 
     // Inisialisasi hasil skenario
-    const scenarioResults = {
-      url,
-      totalTests: users * repeats,
-      successCount: 0,
-      errorCount: 0,
-      totalLoadTime: 0,
-      avgLoadTime: 0,
-      successRate: 0,
-      errorRate: 0,
-    };
+    // const scenarioResults = {
+    //   url,
+    //   totalTests: users * repeats,
+    //   successCount: 0,
+    //   errorCount: 0,
+    //   totalLoadTime: 0,
+    //   avgLoadTime: 0,
+    //   successRate: 0,
+    //   errorRate: 0,
+    // };
+
+      const scenarioResults = {
+        url,
+        totalTests: users * repeats,
+        successCount: 0,
+        errorCount: 0,
+        totalLoadTime: 0,
+        avgLoadTime: 0,
+        successRate: 0,
+        errorRate: 0,
+        maxLoadTime: 0,
+        minLoadTime: Infinity,
+        loadTimes: [],
+        medianLoadTime: 0,
+        stdDeviationLoadTime: 0,
+        failureDetails: [],
+      };
+    
 
     // Definisikan task cluster
     await cluster.task(async ({ page, data }) => {
       const { url, inputField, inputValue, button, userIndex, repeatIndex } = data;
       const startTime = Date.now();
 
+      // try {
+      //   await page.goto(url, { waitUntil: 'networkidle2', timeout: 120000 }); // Timeout 120 detik
+      //   const loadTime = Date.now() - startTime;
+
+      //   scenarioResults.successCount++;
+      //   scenarioResults.totalLoadTime += loadTime;
+
+      //   addLogEntry(
+      //     `Scenario ${scenarioIndex + 1}, User ${userIndex + 1}, Repeat ${repeatIndex + 1}: Success (${loadTime}ms)`,
+      //     'success'
+      //   );
+
+      //   // Simulate input jika ada inputField dan inputValue
+      //   if (inputField && inputValue) {
+      //     await page.type(inputField, inputValue);
+      //     addLogEntry(
+      //       `Scenario ${scenarioIndex + 1}: Typed '${inputValue}' into '${inputField}'`,
+      //       'success'
+      //     );
+      //   }
+
+      //   // Klik button jika diberikan
+      //   if (button) {
+      //     await page.waitForSelector(button, { timeout: 120000 });
+      //     await page.click(button);
+      //     addLogEntry(
+      //       `Scenario ${scenarioIndex + 1}: Clicked button '${button}'`,
+      //       'success'
+      //     );
+      //   }
+      // } catch (error) {
+      //   scenarioResults.errorCount++;
+      //   addLogEntry(
+      //     `Scenario ${scenarioIndex + 1}, User ${userIndex + 1}, Repeat ${repeatIndex + 1}: Failed (${error.message})`,
+      //     'error'
+      //   );
+      // }
+
       try {
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 120000 }); // Timeout 120 detik
         const loadTime = Date.now() - startTime;
-
+      
         scenarioResults.successCount++;
         scenarioResults.totalLoadTime += loadTime;
-
+      
+        // Perbarui max dan min load time
+        if (loadTime > scenarioResults.maxLoadTime) scenarioResults.maxLoadTime = loadTime;
+        if (loadTime < scenarioResults.minLoadTime) scenarioResults.minLoadTime = loadTime;
+      
+        // Simpan load time
+        scenarioResults.loadTimes.push(loadTime);
+      
         addLogEntry(
           `Scenario ${scenarioIndex + 1}, User ${userIndex + 1}, Repeat ${repeatIndex + 1}: Success (${loadTime}ms)`,
           'success'
         );
-
+      
         // Simulate input jika ada inputField dan inputValue
         if (inputField && inputValue) {
           await page.type(inputField, inputValue);
@@ -86,7 +149,7 @@ app.post('/run-scenarios', async (req, res) => {
             'success'
           );
         }
-
+      
         // Klik button jika diberikan
         if (button) {
           await page.waitForSelector(button, { timeout: 120000 });
@@ -98,11 +161,16 @@ app.post('/run-scenarios', async (req, res) => {
         }
       } catch (error) {
         scenarioResults.errorCount++;
+        scenarioResults.failureDetails.push({
+          userIndex,
+          repeatIndex,
+          error: error.message,
+        });
         addLogEntry(
           `Scenario ${scenarioIndex + 1}, User ${userIndex + 1}, Repeat ${repeatIndex + 1}: Failed (${error.message})`,
           'error'
         );
-      }
+      }      
     });
 
     // Tambahkan semua pengguna dan pengulangan ke antrian cluster
@@ -132,14 +200,36 @@ app.post('/run-scenarios', async (req, res) => {
   await cluster.idle();
 
   // Perhitungan statistik setelah semua task selesai
-  results.forEach((result) => {
-    const { details } = result;
-    if (details.successCount > 0) {
-      details.avgLoadTime = details.totalLoadTime / details.successCount;
-    }
-    details.successRate = (details.successCount / details.totalTests) * 100;
-    details.errorRate = (details.errorCount / details.totalTests) * 100;
-  });
+  // results.forEach((result) => {
+  //   const { details } = result;
+  //   if (details.successCount > 0) {
+  //     details.avgLoadTime = details.totalLoadTime / details.successCount;
+  //   }
+  //   details.successRate = (details.successCount / details.totalTests) * 100;
+  //   details.errorRate = (details.errorCount / details.totalTests) * 100;
+  // });
+    results.forEach((result) => {
+      const { details } = result;
+      if (details.successCount > 0) {
+        details.avgLoadTime = details.totalLoadTime / details.successCount;
+    
+        // Hitung Median
+        const sortedTimes = details.loadTimes.sort((a, b) => a - b);
+        const mid = Math.floor(sortedTimes.length / 2);
+        details.medianLoadTime = sortedTimes.length % 2 !== 0
+          ? sortedTimes[mid]
+          : (sortedTimes[mid - 1] + sortedTimes[mid]) / 2;
+    
+        // Hitung Standar Deviasi
+        const mean = details.avgLoadTime;
+        const variance = details.loadTimes.reduce((acc, time) => acc + Math.pow(time - mean, 2), 0) / details.loadTimes.length;
+        details.stdDeviationLoadTime = Math.sqrt(variance);
+      }
+    
+      details.successRate = (details.successCount / details.totalTests) * 100;
+      details.errorRate = (details.errorCount / details.totalTests) * 100;
+    });
+  
 
   await cluster.close();
 
